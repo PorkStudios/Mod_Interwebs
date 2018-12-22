@@ -1,4 +1,4 @@
-package net.daporkchop.interwebs.util;
+package net.daporkchop.interwebs.util.stack;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -7,7 +7,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**

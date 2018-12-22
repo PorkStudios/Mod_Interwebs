@@ -3,6 +3,8 @@ package net.daporkchop.interwebs.gui.terminal;
 import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 
 /**

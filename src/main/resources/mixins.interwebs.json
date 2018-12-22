@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "compatibilityLevel": "JAVA_8",
+  "package": "net.daporkchop.interwebs.mixin",
+  "refmap": "mixins.interwebs.refmap.json",
+  "mixins": [
+    "inventory.MixinItemStack"
+  ],
+  "client": [
+    "client.gui.inventory.MixinGuiContainer"
+  ]
+}

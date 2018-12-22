@@ -2,6 +2,7 @@ package net.daporkchop.interwebs.gui.terminal;
 
 import lombok.Getter;
 import lombok.NonNull;
+import net.daporkchop.interwebs.network.inventory.FakeInventory;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
@@ -16,8 +17,11 @@ public class TerminalContainer extends Container {
     private final TileEntityTerminal te;
     public int scroll = 0;
 
+    private final FakeInventory inventory;
+
     public TerminalContainer(@NonNull IInventory playerInventory, @NonNull TileEntityTerminal te) {
         this.te = te;
+        this.inventory = te
 
         this.addPlayerSlots(playerInventory);
         //add slots for data

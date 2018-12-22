@@ -5,22 +5,25 @@ buildscript {
             name = "forge"
             url = "https://files.minecraftforge.net/maven"
         }
-        /*maven {
+        maven {
             name = "SpongePowered"
             url = "http://repo.spongepowered.org/maven"
-        }*/
+        }
     }
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
         //classpath "com.github.jengelman.gradle.plugins:shadow:1.2.3"
-        //classpath "org.spongepowered:mixingradle:0.5-SNAPSHOT"
+        classpath "org.spongepowered:mixingradle:0.5-SNAPSHOT"
     }
 }
 
+plugins {
+    id "io.franzbecker.gradle-lombok" version "1.14"
+}
+
 apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: "io.franzbecker.gradle-lombok"
 //apply plugin: "com.github.johnrengelman.shadow"
-//apply plugin: "org.spongepowered.mixin"
+apply plugin: "org.spongepowered.mixin"
 
 
 sourceCompatibility = targetCompatibility = "1.8"
@@ -35,6 +38,8 @@ minecraft {
 
     mappings = project.mcpVersion
     makeObfSourceJar = false
+
+    coreMod = "net.daporkchop.interwebs.mixin.MixinLoaderForge"
 }
 
 configurations.all {
@@ -49,16 +54,16 @@ repositories {
         name = "DaPorkchop_"
         url = "https://maven.daporkchop.net/"
     }
-    /*maven {
+    maven {
         name = 'spongepowered-repo'
         url = 'http://repo.spongepowered.org/maven/'
-    }*/
+    }
 }
 
 dependencies {
-    /*compile("org.spongepowered:mixin:0.7.11") {
+    compile("org.spongepowered:mixin:0.7.10-SNAPSHOT") {
         exclude module: "launchwrapper"
-    }*/
+    }
     compile ("net.daporkchop.lib:network:0.2.1-SNAPSHOT")   {
         exclude group: "io.netty"
         exclude group: "com.nukkitx.network"
@@ -85,17 +90,17 @@ processResources {
     rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
-/*mixin {
+mixin {
     defaultObfuscationEnv searge
     add sourceSets.main, "mixins.interwebs.refmap.json"
 }
 
 reobf {
-    shadowJar {
+    jar {
         mappingType = 'SEARGE'
         classpath = sourceSets.main.compileClasspath
     }
-}*/
+}
 
 /*shadowJar {
     classifier = "full"
@@ -105,7 +110,7 @@ reobf {
 
 build.dependsOn(shadowJar)*/
 
-/*jar {
+jar {
     manifest {
         attributes(
                 "MixinConfigs": 'mixins.interwebs.json',
@@ -117,6 +122,6 @@ build.dependsOn(shadowJar)*/
                 'FMLAT': 'interwebs_at.cfg'
         )
     }
-}*/
+}
 
 
