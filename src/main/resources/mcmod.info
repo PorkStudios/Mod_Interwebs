@@ -1,0 +1,18 @@
+[
+  {
+    "modid": "interwebs",
+    "name": "The Interwebs",
+    "description": "Unifying Minecraft storage everywhere!",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://daporkchop.net",
+    "updateUrl": "",
+    "authorList": [
+      "DaPorkchop_"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
