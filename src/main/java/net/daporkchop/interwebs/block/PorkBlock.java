@@ -1,7 +1,7 @@
 package net.daporkchop.interwebs.block;
 
 import lombok.NonNull;
-import net.daporkchop.interwebs.Interwebs;
+import net.daporkchop.interwebs.ModInterwebs;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -20,7 +20,7 @@ public abstract class PorkBlock extends Block {
 
         String className = this.getClass().getSimpleName();
         String stripped = className.replace("Block", "");
-        this.setRegistryName(Interwebs.MOD_ID, stripped.toLowerCase());
+        this.setRegistryName(ModInterwebs.MOD_ID, stripped.toLowerCase());
 
         this.setCreativeTab(CreativeTabs.REDSTONE);
     }

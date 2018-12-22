@@ -1,9 +1,8 @@
 package net.daporkchop.interwebs.block;
 
-import net.daporkchop.interwebs.Interwebs;
+import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.gui.GuiProxy;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
-import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -25,13 +24,13 @@ public class BlockTerminal extends PorkBlock implements ITileEntityProvider {
     public BlockTerminal()  {
         super(Material.ANVIL);
 
-        GameRegistry.registerTileEntity(TileEntityTerminal.class, new ResourceLocation(Interwebs.MOD_ID, "terminal"));
+        GameRegistry.registerTileEntity(TileEntityTerminal.class, new ResourceLocation(ModInterwebs.MOD_ID, "terminal"));
     }
 
     @Override
     public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
         if (!world.isRemote) {
-            player.openGui(Interwebs.INSTANCE, GuiProxy.ID_TERMINAL, world, pos.getX(), pos.getY(), pos.getZ());
+            player.openGui(ModInterwebs.INSTANCE, GuiProxy.ID_TERMINAL, world, pos.getX(), pos.getY(), pos.getZ());
         }
         return true;
     }
