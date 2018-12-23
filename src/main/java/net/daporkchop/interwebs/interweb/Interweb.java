@@ -31,23 +31,32 @@ import java.util.UUID;
 public class Interweb {
     @Setter
     private String name;
-
     @NonNull
     private UUID uuid;
 
+    @Setter
+    private volatile boolean dirty;
+
     private final ItemStorage inventory = new ItemStorage(this);
 
-    public void read(@NonNull NBTTagCompound tag)   {
+    public Interweb read(@NonNull NBTTagCompound tag)   {
         this.uuid = tag.getUniqueId("uuid");
         this.name = tag.getString("name");
 
         this.inventory.read(tag.getTagList("inventory", 10));
+        return this;
     }
 
-    public void write(@NonNull NBTTagCompound tag)  {
+    public Interweb write(@NonNull NBTTagCompound tag)  {
         tag.setUniqueId("uuid", this.uuid);
         tag.setString("name", this.name);
 
         tag.setTag("inventory", this.inventory.write(new NBTTagList()));
+        return this;
+    }
+
+    public Interweb markDirty() {
+        this.dirty = true;
+        return this;
     }
 }

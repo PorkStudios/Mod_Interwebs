@@ -21,10 +21,12 @@ import net.daporkchop.interwebs.block.BlockTerminal;
 import net.daporkchop.interwebs.block.InterwebsBlocks;
 import net.daporkchop.interwebs.gui.GuiProxy;
 import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -33,7 +35,9 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.event.RegistryEvent;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +55,7 @@ public class ModInterwebs {
     public static final String MOD_NAME = "The Interwebs";
     public static final String VERSION = "0.0.1";
 
-    public final Map<UUID, Interweb> interwebs = new ConcurrentHashMap<>();
+    public Interwebs interwebs;
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
@@ -77,16 +81,28 @@ public class ModInterwebs {
             for (Field field : InterwebsBlocks.class.getDeclaredFields())    {
                 if (Block.class.isAssignableFrom(field.getType()))  {
                     Block block = (Block) field.get(null);
-                    event.getRegistry().register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+                    ResourceLocation registryName = block.getRegistryName();
+                    if (registryName == null)   {
+                        throw new NullPointerException();
+                    }
+                    event.getRegistry().register(new ItemBlock(block).setRegistryName(registryName));
                 }
             }
         }
 
         @SubscribeEvent
-        public static void addBlocks(@NonNull RegistryEvent.Register<Block> event) {
-            event.getRegistry().registerAll(
-                    new BlockTerminal()
-            );
+        @SuppressWarnings("unchecked")
+        public static void addBlocks(@NonNull RegistryEvent.Register<Block> event) throws IllegalAccessException, InstantiationException, InvocationTargetException {
+            for (Field field : InterwebsBlocks.class.getDeclaredFields())   {
+                try {
+                    if (Block.class.isAssignableFrom(field.getType())) {
+                        Constructor<? extends Block> constructor = ((Class<? extends Block>) field.getType()).getConstructor();
+                        event.getRegistry().register(constructor.newInstance());
+                    }
+                } catch (NoSuchMethodException e)   {
+                    //ignore
+                }
+            }
         }
     }
 

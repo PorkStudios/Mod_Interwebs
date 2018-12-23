@@ -19,6 +19,8 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.interweb.Interwebs;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -26,41 +28,35 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import java.util.UUID;
 
 /**
- * Sends an item to the interweb inventory
- *
  * @author DaPorkchop_
  */
 @AllArgsConstructor
 @NoArgsConstructor
-public class PacketSendItem implements IMessage {
-    public int slot; //the slot in the player's inventory
-    public int count; //the number of items to be transferred
-    public UUID networkId; //the ID of the network that the item(s) will be added to
+public class PacketBeginTrackingInterweb implements IMessage {
+    @NonNull
+    public UUID networkId;
 
     @Override
     public void fromBytes(@NonNull ByteBuf buf) {
-        this.slot = buf.readInt();
-        this.count = buf.readInt();
-
         this.networkId = new UUID(buf.readLong(), buf.readLong());
     }
 
     @Override
     public void toBytes(@NonNull ByteBuf buf) {
-        buf.writeInt(this.slot);
-        buf.writeInt(this.count);
-
         buf.writeLong(this.networkId.getMostSignificantBits());
         buf.writeLong(this.networkId.getLeastSignificantBits());
     }
 
-    public static class Handler implements IMessageHandler<PacketSendItem, IMessage>    {
+    public static class Handler implements IMessageHandler<PacketBeginTrackingInterweb, PacketInterwebData> {
         @Override
-        public IMessage onMessage(PacketSendItem message, MessageContext ctx) {
-            //i don't care if this is handled concurrently, everything interweb-related is thread-safe!
-            //TODO: the current behaviour could be exploited to allow users to send items to a network without physical access to a terminal
-
-            return null;
+        public PacketInterwebData onMessage(PacketBeginTrackingInterweb message, MessageContext ctx) {
+            Interweb interweb = Interwebs.getInstance().loadAndGet(message.networkId);
+            if (interweb == null) {
+                return null;
+            } else {
+                //TODO: save tracking list
+                return new PacketInterwebData(message.networkId, interweb.getName());
+            }
         }
     }
 }

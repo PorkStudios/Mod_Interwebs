@@ -15,32 +15,60 @@
 
 package net.daporkchop.interwebs.gui.terminal;
 
-import net.daporkchop.interwebs.ModInterwebs;
+import lombok.Getter;
+import lombok.NonNull;
+import net.daporkchop.interwebs.gui.GuiConstants;
+import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.interweb.inventory.StorageSnapshot;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
+import net.daporkchop.interwebs.util.stack.BigStack;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.renderer.RenderHelper;
 
 /**
  * @author DaPorkchop_
  */
-public class TerminalGUI extends GuiContainer {
-    public static final int WIDTH = 243;
-    public static final int HEIGHT = 222;
+@Getter
+public class TerminalGUI extends GuiContainer implements GuiConstants {
+    private final Interweb interweb;
+    private final StorageSnapshot snapshot;
 
-    private static final ResourceLocation background = new ResourceLocation(ModInterwebs.MOD_ID, "textures/gui/terminal.png");
-
-    public TerminalGUI(TileEntityTerminal tileEntity, TerminalContainer container) {
+    public TerminalGUI(TileEntityTerminal te, TerminalContainer container) {
         super(container);
 
-        this.xSize = WIDTH;
-        this.ySize = HEIGHT;
+        this.xSize = TERMINAL_WIDTH;
+        this.ySize = TERMINAL_HEIGHT;
+
+        this.interweb = te.getInterweb();
+        this.snapshot = new StorageSnapshot(this.interweb.getInventory());
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        this.mc.getTextureManager().bindTexture(background);
-        drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
+        this.mc.getTextureManager().bindTexture(TERMINAL_BACKGROUND);
+        drawTexturedModalRect(this.guiLeft, this.guiTop, 0, 0, this.xSize, this.ySize);
+    }
+
+    @Override
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
+        RenderHelper.enableGUIStandardItemLighting();
+        //hehe this actually draws the items
+        this.snapshot.update(System.currentTimeMillis() >>> 9L)
+                .forEach((stack, x, y) -> this.drawStack(stack, this.guiLeft + 8 + x * 18, this.guiTop + 20 + y * 18, null));
+        RenderHelper.disableStandardItemLighting();
+    }
+
+    protected void drawStack(@NonNull BigStack stack, int x, int y, String altText) {
+        GlStateManager.translate(0.0F, 0.0F, 32.0F);
+        this.zLevel = 200.0F;
+        this.itemRender.zLevel = 200.0F;
+        FontRenderer font = stack.getItem().getFontRenderer(stack.getFakedStack());
+        if (font == null) font = fontRenderer;
+        this.itemRender.renderItemAndEffectIntoGUI(stack.getFakedStack(), x, y);
+        stack.renderItemOverlayIntoGUI(this.itemRender, font, x, y, altText);
+        this.zLevel = 0.0F;
+        this.itemRender.zLevel = 0.0F;
     }
 }

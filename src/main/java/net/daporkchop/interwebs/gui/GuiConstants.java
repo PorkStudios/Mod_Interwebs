@@ -13,36 +13,19 @@
  *
  */
 
-package net.daporkchop.interwebs.block;
+package net.daporkchop.interwebs.gui;
 
-import lombok.NonNull;
 import net.daporkchop.interwebs.ModInterwebs;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * @author DaPorkchop_
  */
-public abstract class PorkBlock extends Block {
-    public PorkBlock(@NonNull Material material)    {
-        super(material);
-
-        String className = this.getClass().getSimpleName();
-        String stripped = className.replace("Block", "");
-        this.setRegistryName(new ResourceLocation(ModInterwebs.MOD_ID, stripped.toLowerCase()));
-
-        this.setCreativeTab(CreativeTabs.REDSTONE);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void initModel() {
-        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0, new ModelResourceLocation(this.getRegistryName(), "inventory"));
-    }
+public interface GuiConstants {
+    //terminal gui
+    int TERMINAL_WIDTH = 243;
+    int TERMINAL_HEIGHT = 222;
+    int TERMINAL_SLOTS_WIDTH = 8;
+    int TERMINAL_SLOTS_HEIGHT = 6;
+    ResourceLocation TERMINAL_BACKGROUND = new ResourceLocation(ModInterwebs.MOD_ID, "textures/gui/terminal.png");
 }

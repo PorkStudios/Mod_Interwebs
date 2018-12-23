@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -37,6 +38,7 @@ import java.util.stream.StreamSupport;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
+@Accessors(chain = true)
 @Getter
 public class ItemStorage {
     @NonNull
@@ -45,6 +47,8 @@ public class ItemStorage {
     private final Map<StackIdentifier, AtomicLong> stacks = new ConcurrentHashMap<>();
     @Setter
     private volatile boolean dirty = false;
+
+    private long lastUpdated = Long.MAX_VALUE;
 
     public int size() {
         return this.stacks.size();
@@ -78,9 +82,9 @@ public class ItemStorage {
         return this.getCountA(stack).addAndGet(stack.getCount());
     }
 
-    public long decr(@NonNull StackIdentifier identifierIn, long amount)  {
+    public long decr(@NonNull StackIdentifier identifierIn, long amount) {
         AtomicLong l = this.stacks.computeIfPresent(identifierIn, (identifier, count) -> {
-            if (count.addAndGet(amount) <= 0L)  {
+            if (count.addAndGet(amount) <= 0L) {
                 return null;
             } else {
                 return count;
@@ -89,7 +93,7 @@ public class ItemStorage {
         return l == null ? 0L : l.get();
     }
 
-    public void read(@NonNull NBTTagList tag)   {
+    public void read(@NonNull NBTTagList tag) {
         this.stacks.clear();
         StreamSupport.stream(tag.spliterator(), false)
                 .map(NBTTagCompound.class::cast)
@@ -110,7 +114,7 @@ public class ItemStorage {
                     NBTTagCompound tag = new NBTTagCompound();
                     tag.setString("name", entry.getKey().getItem().getRegistryName().toString());
                     tag.setInteger("meta", entry.getKey().getMeta());
-                    if (entry.getKey().getNbt() != null && !entry.getKey().getNbt().isEmpty())    {
+                    if (entry.getKey().getNbt() != null && !entry.getKey().getNbt().isEmpty()) {
                         tag.setTag("nbt", entry.getKey().getNbt());
                     }
                     tag.setLong("count", entry.getValue().get());
@@ -118,5 +122,10 @@ public class ItemStorage {
                 })
                 .forEach(list::appendTag);
         return list;
+    }
+
+    public ItemStorage updateLastUpdated() {
+        this.lastUpdated = System.currentTimeMillis();
+        return this;
     }
 }
