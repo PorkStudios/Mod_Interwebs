@@ -5,11 +5,18 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.Tuple;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Stores the items for an {@link Interweb}
@@ -67,5 +74,36 @@ public class ItemStorage {
             }
         });
         return l == null ? 0L : l.get();
+    }
+
+    public void read(@NonNull NBTTagList tag)   {
+        this.stacks.clear();
+        StreamSupport.stream(tag.spliterator(), false)
+                .map(NBTTagCompound.class::cast)
+                .map(compound -> new Tuple<>(
+                        new StackIdentifier(
+                                Item.getByNameOrId(compound.getString("name")),
+                                compound.getInteger("meta"),
+                                compound.getCompoundTag("nbt")
+                        ),
+                        new AtomicLong(compound.getLong("count"))
+                ))
+                .forEach(tuple -> this.stacks.put(tuple.getFirst(), tuple.getSecond()));
+    }
+
+    public NBTTagList write(@NonNull NBTTagList list) {
+        this.stacks.entrySet().stream()
+                .map(entry -> {
+                    NBTTagCompound tag = new NBTTagCompound();
+                    tag.setString("name", entry.getKey().getItem().getRegistryName().toString());
+                    tag.setInteger("meta", entry.getKey().getMeta());
+                    if (entry.getKey().getNbt() != null && !entry.getKey().getNbt().isEmpty())    {
+                        tag.setTag("nbt", entry.getKey().getNbt());
+                    }
+                    tag.setLong("count", entry.getValue().get());
+                    return tag;
+                })
+                .forEach(list::appendTag);
+        return list;
     }
 }

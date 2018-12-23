@@ -1,9 +1,11 @@
 package net.daporkchop.interwebs;
 
+import com.mojang.authlib.GameProfile;
 import lombok.NonNull;
 import net.daporkchop.interwebs.block.BlockTerminal;
 import net.daporkchop.interwebs.block.InterwebsBlocks;
 import net.daporkchop.interwebs.gui.GuiProxy;
+import net.daporkchop.interwebs.network.Interweb;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
@@ -16,6 +18,10 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.event.RegistryEvent;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author DaPorkchop_
@@ -29,6 +35,8 @@ public class ModInterwebs {
     public static final String MOD_ID = "interwebs";
     public static final String MOD_NAME = "The Interwebs";
     public static final String VERSION = "0.0.1";
+
+    public final Map<UUID, Interweb> interwebs = new ConcurrentHashMap<>();
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
@@ -64,5 +72,9 @@ public class ModInterwebs {
                     new BlockTerminal()
             );
         }
+    }
+
+    public Interweb getOrCreateDefaultInterwebForPlayer(@NonNull GameProfile profile)   {
+        return this.interwebs.computeIfAbsent(profile.getId(), uuid -> new Interweb(uuid).setName(profile.getName()));
     }
 }
