@@ -27,6 +27,7 @@ import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
+import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -58,6 +59,16 @@ public class Interwebs {
             this.interwebCache = CacheBuilder.newBuilder()
                     .concurrencyLevel(Runtime.getRuntime().availableProcessors())
                     .expireAfterAccess(5L, TimeUnit.MINUTES)
+                    .removalListener((RemovalListener<Key, Interweb>) notification -> {
+                        switch (notification.getCause()) {
+                            case EXPIRED: {
+                                PacketHandler.INSTANCE.sendToServer(new PacketStopTrackingInterweb(notification.getKey().uuid));
+                            }
+                            break;
+                            default:
+                                throw new IllegalStateException(String.format("Invalid cache removal cause: %s", notification.getCause()));
+                        }
+                    })
                     .build(new CacheLoader<Key, Interweb>() {
                         @Override
                         public Interweb load(@NonNull Key key) throws Exception {
@@ -124,6 +135,10 @@ public class Interwebs {
 
     public Interweb computeIfAbsent(@NonNull GameProfile profile) {
         return this.interwebCache.getUnchecked(new InitializerKey(profile));
+    }
+
+    public Interweb computeIfAbsent(@NonNull UUID uuid) {
+        return this.interwebCache.getUnchecked(new Key(uuid));
     }
 
     public Interweb create(@NonNull UUID uuid, @NonNull String name) {

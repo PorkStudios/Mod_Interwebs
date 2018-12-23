@@ -4,7 +4,10 @@
   "package": "net.daporkchop.interwebs.mixin",
   "refmap": "mixins.interwebs.refmap.json",
   "mixins": [
+    "entity.player.MixinEntityPlayerMP"
   ],
   "client": [
+  ],
+  "server": [
   ]
 }

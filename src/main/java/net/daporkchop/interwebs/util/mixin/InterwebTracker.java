@@ -16,14 +16,21 @@
 package net.daporkchop.interwebs.util.mixin;
 
 import lombok.NonNull;
+import net.daporkchop.interwebs.interweb.Interweb;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
  * @author DaPorkchop_
  */
-public interface AtomicLongHolder {
-    AtomicLong getAtomicLong();
+public interface InterwebTracker {
+    void beginTracking(@NonNull Interweb interweb);
 
-    void setAtomicLong(@NonNull AtomicLong countAtomic);
+    void endTracking(@NonNull Interweb interweb);
+
+    boolean isTracking(@NonNull Interweb interweb);
+
+    Stream<Interweb> getAllTracking();
+
+    void stopTrackingAll();
 }

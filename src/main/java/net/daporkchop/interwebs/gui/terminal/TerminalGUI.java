@@ -58,6 +58,8 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
         this.snapshot.update(System.currentTimeMillis() >>> 9L)
                 .forEach((stack, x, y) -> this.drawStack(stack, this.guiLeft + 8 + x * 18, this.guiTop + 20 + y * 18, null));
         RenderHelper.disableStandardItemLighting();
+
+        this.fontRenderer.drawString(this.interweb.getName(), 8, 6, 0xFF000000);
     }
 
     protected void drawStack(@NonNull BigStack stack, int x, int y, String altText) {
@@ -65,7 +67,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
         this.zLevel = 200.0F;
         this.itemRender.zLevel = 200.0F;
         FontRenderer font = stack.getItem().getFontRenderer(stack.getFakedStack());
-        if (font == null) font = fontRenderer;
+        if (font == null) font = this.fontRenderer;
         this.itemRender.renderItemAndEffectIntoGUI(stack.getFakedStack(), x, y);
         stack.renderItemOverlayIntoGUI(this.itemRender, font, x, y, altText);
         this.zLevel = 0.0F;

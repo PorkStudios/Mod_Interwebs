@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
+import net.daporkchop.interwebs.util.mixin.InterwebTracker;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
@@ -54,7 +55,7 @@ public class PacketBeginTrackingInterweb implements IMessage {
             if (interweb == null) {
                 return null;
             } else {
-                //TODO: save tracking list
+                ((InterwebTracker) ctx.getServerHandler().player).beginTracking(interweb);
                 return new PacketInterwebData(message.networkId, interweb.getName());
             }
         }

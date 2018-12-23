@@ -105,8 +105,4 @@ public class ModInterwebs {
             }
         }
     }
-
-    public Interweb getOrCreateDefaultInterwebForProfile(@NonNull GameProfile profile)   {
-        return this.interwebs.computeIfAbsent(profile.getId(), uuid -> new Interweb(uuid).setName(profile.getName()));
-    }
 }

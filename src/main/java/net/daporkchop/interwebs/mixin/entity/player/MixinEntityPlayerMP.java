@@ -13,29 +13,54 @@
  *
  */
 
-package net.daporkchop.interwebs.mixin.inventory;
+package net.daporkchop.interwebs.mixin.entity.player;
 
+import com.mojang.authlib.GameProfile;
 import lombok.NonNull;
-import net.daporkchop.interwebs.util.mixin.AtomicLongHolder;
-import net.minecraft.item.ItemStack;
+import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.util.mixin.InterwebTracker;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.stream.Stream;
 
 /**
  * @author DaPorkchop_
  */
-@Mixin(ItemStack.class)
-public abstract class MixinItemStack implements AtomicLongHolder {
-    private AtomicLong countAtomic;
+@Mixin(EntityPlayerMP.class)
+public abstract class MixinEntityPlayerMP extends EntityPlayer implements InterwebTracker {
+    private final Collection<Interweb> tracking = new ArrayDeque<>();
 
-    @Override
-    public AtomicLong getAtomicLong() {
-        return this.countAtomic;
+    private MixinEntityPlayerMP() {
+        super(null, null);
     }
 
     @Override
-    public void setAtomicLong(@NonNull AtomicLong countAtomic) {
-        this.countAtomic = countAtomic;
+    public void beginTracking(@NonNull Interweb interweb) {
+        this.tracking.add(interweb);
+    }
+
+    @Override
+    public void endTracking(@NonNull Interweb interweb) {
+        this.tracking.remove(interweb);
+    }
+
+    @Override
+    public boolean isTracking(@NonNull Interweb interweb) {
+        return this.tracking.contains(interweb);
+    }
+
+    @Override
+    public Stream<Interweb> getAllTracking() {
+        return this.tracking.stream();
+    }
+
+    @Override
+    public void stopTrackingAll() {
+        this.tracking.clear();
     }
 }

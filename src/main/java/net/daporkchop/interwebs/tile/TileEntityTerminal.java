@@ -20,6 +20,7 @@ import lombok.NonNull;
 import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.interweb.Interwebs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -53,7 +54,7 @@ public class TileEntityTerminal extends TileEntity {
         if (this.networkId != null) {
             throw new IllegalStateException("already initialized!");
         }
-        this.interweb = ModInterwebs.INSTANCE.getOrCreateDefaultInterwebForProfile(player.getGameProfile());
+        this.interweb = Interwebs.getInstance().computeIfAbsent(player.getGameProfile());
         this.networkId = this.interweb.getUuid();
         return this;
     }
