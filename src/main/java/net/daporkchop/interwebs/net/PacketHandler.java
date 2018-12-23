@@ -13,44 +13,36 @@
  *
  */
 
-package net.daporkchop.interwebs.network;
+package net.daporkchop.interwebs.net;
 
-import lombok.*;
-import lombok.experimental.Accessors;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryBasic;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import lombok.NonNull;
+import net.daporkchop.interwebs.net.packet.PacketSendItem;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import net.minecraftforge.fml.relauncher.Side;
 
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author DaPorkchop_
  */
-@RequiredArgsConstructor
-@Getter
-@Accessors(chain = true)
-public class Interweb {
-    @Setter
-    private String name;
+public class PacketHandler {
+    private static final AtomicInteger ID = new AtomicInteger(0);
 
-    @NonNull
-    private UUID uuid;
+    public static SimpleNetworkWrapper INSTANCE = null;
 
-    private final ItemStorage inventory = new ItemStorage(this);
+    public static void register(@NonNull String channelName)    {
+        INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(channelName);
 
-    public void read(@NonNull NBTTagCompound tag)   {
-        this.uuid = tag.getUniqueId("uuid");
-        this.name = tag.getString("name");
+        //serverbound
+        register(PacketSendItem.class, PacketSendItem.Handler.class, Side.SERVER);
 
-        this.inventory.read(tag.getTagList("inventory", 10));
+        //clientbound
     }
 
-    public void write(@NonNull NBTTagCompound tag)  {
-        tag.setUniqueId("uuid", this.uuid);
-        tag.setString("name", this.name);
-
-        tag.setTag("inventory", this.inventory.write(new NBTTagList()));
+    private static <P extends IMessage, R extends IMessage> void register(@NonNull Class<P> packetClass, @NonNull Class<? extends IMessageHandler<P, R>> handlerClass, @NonNull Side side) {
+        INSTANCE.registerMessage(handlerClass, packetClass, ID.getAndIncrement(), side);
     }
 }

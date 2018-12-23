@@ -13,7 +13,7 @@
  *
  */
 
-package net.daporkchop.interwebs.network;
+package net.daporkchop.interwebs.interweb;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -26,11 +26,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.Tuple;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**

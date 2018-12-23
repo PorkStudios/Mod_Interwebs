@@ -13,48 +13,41 @@
  *
  */
 
-package net.daporkchop.interwebs.tile;
+package net.daporkchop.interwebs.interweb;
 
-import lombok.Getter;
-import lombok.NonNull;
+import lombok.*;
 import lombok.experimental.Accessors;
-import net.daporkchop.interwebs.ModInterwebs;
-import net.daporkchop.interwebs.interweb.Interweb;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.nbt.NBTTagList;
 
 import java.util.UUID;
 
 /**
  * @author DaPorkchop_
  */
-@Accessors(chain = true)
+@RequiredArgsConstructor
 @Getter
-public class TileEntityTerminal extends TileEntity {
+@Accessors(chain = true)
+public class Interweb {
+    @Setter
+    private String name;
+
     @NonNull
-    private UUID networkId;
+    private UUID uuid;
 
-    private Interweb interweb;
+    private final ItemStorage inventory = new ItemStorage(this);
 
-    @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        this.networkId = compound.getUniqueId("networkId");
-        super.readFromNBT(compound);
+    public void read(@NonNull NBTTagCompound tag)   {
+        this.uuid = tag.getUniqueId("uuid");
+        this.name = tag.getString("name");
+
+        this.inventory.read(tag.getTagList("inventory", 10));
     }
 
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        compound.setUniqueId("networkId", this.networkId);
-        return super.writeToNBT(compound);
-    }
+    public void write(@NonNull NBTTagCompound tag)  {
+        tag.setUniqueId("uuid", this.uuid);
+        tag.setString("name", this.name);
 
-    public synchronized TileEntityTerminal init(@NonNull EntityPlayer player)    {
-        if (this.networkId != null) {
-            throw new IllegalStateException("already initialized!");
-        }
-        this.interweb = ModInterwebs.INSTANCE.getOrCreateDefaultInterwebForProfile(player.getGameProfile());
-        this.networkId = this.interweb.getUuid();
-        return this;
+        tag.setTag("inventory", this.inventory.write(new NBTTagList()));
     }
 }

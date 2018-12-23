@@ -65,7 +65,7 @@ public class StackIdentifier {
 
     @Override
     public int hashCode() {
-        return (Objects.hashCode(this.item.getRegistryName()) * 127 + this.meta) * 127 + Objects.hashCode(this.nbt);
+        return (Objects.hashCode(this.item.getRegistryName()) * 1574232431 + this.meta) * 2076444119 + Objects.hashCode(this.nbt);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class StackIdentifier {
         if (this.nbt == null)   {
             return String.format("%s:%d", this.item.getRegistryName(), this.meta);
         } else {
-            return String.format("%s:%d %s", this.item.getRegistryName(), this.meta, this.nbt);
+            return String.format("%s:%d(%s)", this.item.getRegistryName(), this.meta, this.nbt);
         }
     }
 }

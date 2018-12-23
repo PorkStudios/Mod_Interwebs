@@ -13,37 +13,61 @@
  *
  */
 
-package net.daporkchop.interwebs.network.inventory;
+package net.daporkchop.interwebs.util.stack;
 
 import lombok.Getter;
 import lombok.NonNull;
-import net.daporkchop.interwebs.network.ItemStorage;
-import net.minecraft.inventory.InventoryBasic;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.primitive.PrimitiveConstants;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 
-import static java.lang.Math.min;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
  */
+@RequiredArgsConstructor
 @Getter
-public class FakeInventory extends InventoryBasic {
-    public static final int WIDTH = 8;
-    public static final int HEIGHT = 6;
-    public static final int SLOT_COUNT = WIDTH * HEIGHT;
+public class BigStack implements PrimitiveConstants {
+    @NonNull
+    private final StackIdentifier identifier;
 
-    private final ItemStorage storage;
-    private int scroll;
+    @NonNull
+    private final AtomicLong count;
 
-    public FakeInventory(@NonNull ItemStorage storage) {
-        super(storage.getInterweb().getName(), true, SLOT_COUNT);
-
-        this.storage = storage;
+    public Item getItem() {
+        return this.identifier.getItem();
     }
 
-    public int scroll(int diff) {
-        return this.scroll = min(0, this.scroll + diff);
+    public int getMeta() {
+        return this.identifier.getMeta();
+    }
+
+    public NBTTagCompound getNbt() {
+        return this.identifier.getNbt();
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (this.identifier.hashCode() * 2813494353178762259L + this.hash(this.count.get()));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)    {
+            return true;
+        } else if (obj instanceof BigStack) {
+            BigStack other = (BigStack) obj;
+            return this.identifier.equals(other.identifier) && this.count.get() == other.count.get();
+        } else {
+            return obj instanceof ItemStack && this.identifier.equals(obj); //if it's an itemstack, don't compare counts
+        }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s x%d", this.identifier, this.count.get());
     }
 }

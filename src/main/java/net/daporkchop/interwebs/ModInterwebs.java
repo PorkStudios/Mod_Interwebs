@@ -20,7 +20,8 @@ import lombok.NonNull;
 import net.daporkchop.interwebs.block.BlockTerminal;
 import net.daporkchop.interwebs.block.InterwebsBlocks;
 import net.daporkchop.interwebs.gui.GuiProxy;
-import net.daporkchop.interwebs.network.Interweb;
+import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.net.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
@@ -33,7 +34,6 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.event.RegistryEvent;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +58,7 @@ public class ModInterwebs {
 
     @Mod.EventHandler
     public void preInit(@NonNull FMLPreInitializationEvent event) {
+        PacketHandler.register(MOD_ID);
     }
 
     @Mod.EventHandler
@@ -89,7 +90,7 @@ public class ModInterwebs {
         }
     }
 
-    public Interweb getOrCreateDefaultInterwebForPlayer(@NonNull GameProfile profile)   {
+    public Interweb getOrCreateDefaultInterwebForProfile(@NonNull GameProfile profile)   {
         return this.interwebs.computeIfAbsent(profile.getId(), uuid -> new Interweb(uuid).setName(profile.getName()));
     }
 }
