@@ -28,6 +28,7 @@ import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
 import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
+import net.daporkchop.lib.binary.UTF8;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Getter
 public class Interwebs {
-    private static final Interweb BLANK_INTERWEB = new Interweb(UUID.fromString("empty"));
+    private static final Interweb BLANK_INTERWEB = new Interweb(UUID.nameUUIDFromBytes("empty".getBytes(UTF8.utf8)));
 
     private final File root;
     private final LoadingCache<Key, Interweb> interwebCache;
@@ -130,7 +131,7 @@ public class Interwebs {
     }
 
     public static Interwebs getInstance() {
-        return ModInterwebs.INSTANCE.interwebs;
+        return ModInterwebs.INSTANCE.interwebs_serverInstance;
     }
 
     public Interweb computeIfAbsent(@NonNull GameProfile profile) {

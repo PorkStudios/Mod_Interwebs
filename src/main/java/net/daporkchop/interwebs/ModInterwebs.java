@@ -31,6 +31,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.event.RegistryEvent;
@@ -55,7 +56,7 @@ public class ModInterwebs {
     public static final String MOD_NAME = "The Interwebs";
     public static final String VERSION = "0.0.1";
 
-    public Interwebs interwebs;
+    public Interwebs interwebs_serverInstance;
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
@@ -72,6 +73,11 @@ public class ModInterwebs {
 
     @Mod.EventHandler
     public void postInit(@NonNull FMLPostInitializationEvent event) {
+    }
+
+    @Mod.EventHandler
+    public void serverStarting(@NonNull FMLServerStartingEvent event)   {
+        //this.interwebs_serverInstance = new Interwebs(event.getServer().getWorld(0).getPerWorldStorage().getUniqueDataId());
     }
 
     @Mod.EventBusSubscriber
