@@ -18,18 +18,30 @@ package net.daporkchop.interwebs.interweb;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.daporkchop.interwebs.util.CoolAtomicLong;
+import net.daporkchop.interwebs.util.FriendlyEmptySet;
+import net.daporkchop.interwebs.util.stack.BigStack;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
+import net.daporkchop.lib.common.util.PorkUtil;
+import net.daporkchop.lib.primitive.function.bifunction.LongObjectObjectBiFunction;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.Tuple;
+import sun.misc.Unsafe;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongUnaryOperator;
+import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 /**
@@ -44,11 +56,18 @@ public class ItemStorage {
     @NonNull
     private final Interweb interweb;
     //TODO: test if synchronizing this would give better performance
-    private final Map<StackIdentifier, AtomicLong> stacks = new ConcurrentHashMap<>();
-    @Setter
-    private volatile boolean dirty = false;
-
-    private long lastUpdated = Long.MAX_VALUE;
+    private final Map<StackIdentifier, BigStack> stacks = new ConcurrentHashMap<>();
+    Set<BigStack> dirtyStacks = new FriendlyEmptySet<>();
+    private final Function<StackIdentifier, BigStack> stackSupplier_1 = identifier -> {
+        BigStack stack = new BigStack(identifier);
+        stack.setCount(new CoolAtomicLong(l -> this.dirtyStacks.add(stack)));
+        return stack;
+    };
+    private final LongObjectObjectBiFunction<StackIdentifier, BigStack> stackSupplier_2 = (count, identifier) -> {
+        BigStack stack = new BigStack(identifier);
+        stack.setCount(new CoolAtomicLong(l -> this.dirtyStacks.add(stack), count));
+        return stack;
+    };
 
     public int size() {
         return this.stacks.size();
@@ -59,23 +78,23 @@ public class ItemStorage {
     }
 
     public void markDirty() {
-        this.dirty = true;
+        this.interweb.markDirty();
     }
 
-    public AtomicLong getCountAtomic(@NonNull StackIdentifier identifier) {
-        return this.stacks.computeIfAbsent(identifier, i -> new AtomicLong());
+    public CoolAtomicLong getCountAtomic(@NonNull StackIdentifier identifier) {
+        return this.stacks.computeIfAbsent(identifier, this.stackSupplier_1).getCount();
     }
 
-    public AtomicLong getCountAtomic(@NonNull ItemStack stack) {
-        return this.stacks.computeIfAbsent(StackIdentifier.of(stack), s -> new AtomicLong());
+    public CoolAtomicLong getCountAtomic(@NonNull ItemStack stack) {
+        return this.stacks.computeIfAbsent(StackIdentifier.of(stack), this.stackSupplier_1).getCount();
     }
 
     public long getCount(@NonNull StackIdentifier identifier) {
-        return this.stacks.get(identifier).get();
+        return this.stacks.get(identifier).getCount().get();
     }
 
     public long getCount(@NonNull ItemStack stack) {
-        return this.stacks.get(stack).get();
+        return this.stacks.get(stack).getCount().get();
     }
 
     public long addItem(@NonNull ItemStack stack) {
@@ -83,29 +102,29 @@ public class ItemStorage {
     }
 
     public long decr(@NonNull StackIdentifier identifierIn, long amount) {
-        AtomicLong l = this.stacks.computeIfPresent(identifierIn, (identifier, count) -> {
-            if (count.addAndGet(amount) <= 0L) {
+        BigStack l = this.stacks.computeIfPresent(identifierIn, (identifier, count) -> {
+            if (count.getCount().addAndGet(amount) <= 0L) {
                 return null;
             } else {
                 return count;
             }
         });
-        return l == null ? 0L : l.get();
+        return l == null ? 0L : l.getCount().get();
     }
 
     public void read(@NonNull NBTTagList tag) {
         this.stacks.clear();
         StreamSupport.stream(tag.spliterator(), false)
                 .map(NBTTagCompound.class::cast)
-                .map(compound -> new Tuple<>(
+                .map(compound -> this.stackSupplier_2.apply(
+                        compound.getLong("count"),
                         new StackIdentifier(
                                 Item.getByNameOrId(compound.getString("name")),
                                 compound.getInteger("meta"),
                                 compound.hasKey("nbt") ? compound.getCompoundTag("nbt") : null
-                        ),
-                        new AtomicLong(compound.getLong("count"))
+                        )
                 ))
-                .forEach(tuple -> this.stacks.put(tuple.getFirst(), tuple.getSecond()));
+                .forEach(stack -> this.stacks.put(stack.getIdentifier(), stack));
     }
 
     public NBTTagList write(@NonNull NBTTagList list) {
@@ -117,7 +136,7 @@ public class ItemStorage {
                     if (entry.getKey().getNbt() != null && !entry.getKey().getNbt().isEmpty()) {
                         tag.setTag("nbt", entry.getKey().getNbt());
                     }
-                    tag.setLong("count", entry.getValue().get());
+                    tag.setLong("count", entry.getValue().getCount().get());
                     return tag;
                 })
                 .forEach(list::appendTag);
@@ -126,7 +145,7 @@ public class ItemStorage {
 
     public void cleanup() {
         this.stacks.entrySet().removeIf(entry -> {
-            if (entry.getValue().get() == 0L) {
+            if (entry.getValue().getCount().get() == 0L) {
                 this.markDirty();
                 return true;
             } else {
@@ -139,4 +158,5 @@ public class ItemStorage {
         this.lastUpdated = System.currentTimeMillis();
         return this;
     }
+
 }

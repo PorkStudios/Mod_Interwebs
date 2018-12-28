@@ -18,6 +18,8 @@ package net.daporkchop.interwebs.util.stack;
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
+import net.daporkchop.interwebs.util.CoolAtomicLong;
 import net.daporkchop.interwebs.util.Util;
 import net.daporkchop.lib.binary.NettyByteBufUtil;
 import net.daporkchop.lib.binary.stream.DataIn;
@@ -37,7 +39,6 @@ import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
@@ -46,11 +47,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BigStack implements PrimitiveConstants {
     private final StackIdentifier identifier;
     private final ItemStack fakedStack;
-    private final AtomicLong count;
+    @Setter
+    @NonNull
+    private CoolAtomicLong count;
 
-    public BigStack(@NonNull StackIdentifier identifier, @NonNull AtomicLong count) {
+    public BigStack(@NonNull StackIdentifier identifier, @NonNull CoolAtomicLong count) {
         this.identifier = identifier;
         this.count = count;
+
+        this.fakedStack = new ItemStack(identifier.getItem(), 1, identifier.getMeta(), identifier.getNbt());
+    }
+
+    public BigStack(@NonNull StackIdentifier identifier) {
+        this.identifier = identifier;
 
         this.fakedStack = new ItemStack(identifier.getItem(), 1, identifier.getMeta(), identifier.getNbt());
     }
@@ -66,7 +75,7 @@ public class BigStack implements PrimitiveConstants {
     public static BigStack read(@NonNull DataIn in) throws IOException  {
         long count = in.readLong();
         StackIdentifier identifier = StackIdentifier.read(in);
-        return identifier == null ? null : new BigStack(identifier, new AtomicLong(count));
+        return identifier == null ? null : new BigStack(identifier, new CoolAtomicLong(count));
     }
 
     public void write(@NonNull ByteBuf buf) {

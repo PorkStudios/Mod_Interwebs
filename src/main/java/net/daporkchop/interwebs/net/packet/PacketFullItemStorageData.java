@@ -16,11 +16,15 @@
 package net.daporkchop.interwebs.net.packet;
 
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
+import net.daporkchop.interwebs.util.stack.BigStack;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
 import net.daporkchop.lib.binary.NettyByteBufUtil;
 import net.daporkchop.lib.binary.stream.DataIn;
@@ -34,30 +38,33 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 @NoArgsConstructor
 public class PacketFullItemStorageData implements IMessage {
     @NonNull
-    public Map<StackIdentifier, AtomicLong> values;
+    public boolean full;
+    @NonNull
+    public Map<StackIdentifier, BigStack> valuesOut;
+    public Object2LongMap<StackIdentifier> valuesIn;
     @NonNull
     public UUID networkId;
 
     @Override
     public void fromBytes(@NonNull ByteBuf buf) {
+        this.full = buf.readBoolean();
         this.networkId = new UUID(buf.readLong(), buf.readLong());
 
-        this.values = new HashMap<>();
+        this.valuesIn = new Object2LongOpenHashMap<>();
         try (DataIn in = NettyByteBufUtil.wrapIn(buf)) {
             for (long l = buf.readLong() - 1L; l >= 0L; l--) {
                 StackIdentifier identifier = StackIdentifier.read(in);
                 long count = in.readLong();
                 if (identifier != null) {
-                    this.values.put(identifier, new AtomicLong(count));
+                    this.valuesIn.put(identifier, count);
                 }
             }
         } catch (IOException e) {
@@ -67,14 +74,15 @@ public class PacketFullItemStorageData implements IMessage {
 
     @Override
     public void toBytes(@NonNull ByteBuf buf) {
+        buf.writeBoolean(this.full);
         buf.writeLong(this.networkId.getMostSignificantBits());
         buf.writeLong(this.networkId.getLeastSignificantBits());
 
-        buf.writeLong(this.values.size());
+        buf.writeLong(this.valuesOut.size());
         try (DataOut out = NettyByteBufUtil.wrapOut(buf))   {
-            for (Map.Entry<StackIdentifier, AtomicLong> entry : this.values.entrySet()) {
+            for (Map.Entry<StackIdentifier, BigStack> entry : this.valuesOut.entrySet()) {
                 entry.getKey().write(out);
-                out.writeLong(entry.getValue().get());
+                out.writeLong(entry.getValue().getCount().get());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -85,8 +93,10 @@ public class PacketFullItemStorageData implements IMessage {
         @Override
         public IMessage onMessage(PacketFullItemStorageData message, MessageContext ctx) {
             Interweb interweb = Interwebs.getInstance(Side.CLIENT).computeIfAbsent(message.networkId);
-            interweb.getInventory().getStacks().clear();
-            interweb.getInventory().getStacks().putAll(message.values);
+            if (message.full)   {
+                interweb.getInventory().getStacks().clear();
+            }
+            message.valuesIn.forEach((identifier, count) -> interweb.getInventory().getCountAtomic(identifier).addAndGet(count));
             return null;
         }
     }

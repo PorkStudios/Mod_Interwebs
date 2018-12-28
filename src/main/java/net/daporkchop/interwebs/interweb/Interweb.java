@@ -17,10 +17,12 @@ package net.daporkchop.interwebs.interweb;
 
 import lombok.*;
 import lombok.experimental.Accessors;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import scala.reflect.internal.util.WeakHashSet;
 
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author DaPorkchop_
@@ -38,6 +40,15 @@ public class Interweb {
     private volatile boolean dirty;
 
     private final ItemStorage inventory = new ItemStorage(this);
+
+    private final Set<EntityPlayer> trackingPlayers = Collections.newSetFromMap(new WeakHashMap<>());
+    public long startedTracking;
+
+    public Interweb enableServerMode()  {
+        this.inventory.dirtyStacks = Collections.synchronizedSet(new HashSet<>());
+
+        return this;
+    }
 
     public Interweb read(@NonNull NBTTagCompound tag)   {
         this.uuid = tag.getUniqueId("uuid");
@@ -58,5 +69,9 @@ public class Interweb {
     public Interweb markDirty() {
         this.dirty = true;
         return this;
+    }
+
+    public long getAge()    {
+        return System.currentTimeMillis() - this.startedTracking;
     }
 }

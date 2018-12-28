@@ -13,56 +13,89 @@
  *
  */
 
-package net.daporkchop.interwebs.mixin.entity.player;
+package net.daporkchop.interwebs.util;
 
-import com.mojang.authlib.GameProfile;
 import lombok.NonNull;
-import net.daporkchop.interwebs.interweb.Interweb;
-import net.daporkchop.interwebs.util.mixin.InterwebTracker;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.world.World;
-import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author DaPorkchop_
  */
-@Mixin(EntityPlayerMP.class)
-public abstract class MixinEntityPlayerMP extends EntityPlayer implements InterwebTracker {
-    private final Set<Interweb> tracking = Collections.newSetFromMap(new WeakHashMap<>());
-
-    private MixinEntityPlayerMP() {
-        super(null, null);
+public class FriendlyEmptySet<T> implements Set<T> {
+    @Override
+    public int size() {
+        return 0;
     }
 
     @Override
-    public void beginTracking(@NonNull Interweb interweb) {
-        this.tracking.add(interweb);
-        interweb.getTrackingPlayers().add(this);
+    public boolean isEmpty() {
+        return true;
     }
 
     @Override
-    public void endTracking(@NonNull Interweb interweb) {
-        this.tracking.remove(interweb);
-        interweb.getTrackingPlayers().remove(this);
+    public boolean contains(Object o) {
+        return false;
     }
 
     @Override
-    public boolean isTracking(@NonNull Interweb interweb) {
-        return this.tracking.contains(interweb);
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public T next() {
+                return null;
+            }
+        };
     }
 
     @Override
-    public Stream<Interweb> getAllTracking() {
-        return this.tracking.stream();
+    public Object[] toArray() {
+        return new Object[0];
     }
 
     @Override
-    public void stopTrackingAll() {
-        this.tracking.forEach(interweb -> interweb.getTrackingPlayers().remove(this));
-        this.tracking.clear();
+    public <T1> T1[] toArray(T1[] a) {
+        return null;
+    }
+
+    @Override
+    public boolean add(T t) {
+        return false;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        return false;
+    }
+
+    @Override
+    public boolean containsAll(@NonNull Collection<?> c) {
+        return c.isEmpty();
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        return false;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public void clear() {
     }
 }

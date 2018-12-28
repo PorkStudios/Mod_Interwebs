@@ -21,6 +21,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.gui.GuiConstants;
 import net.daporkchop.interwebs.interweb.ItemStorage;
+import net.daporkchop.interwebs.util.CoolAtomicLong;
 import net.daporkchop.interwebs.util.stack.BigStack;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
 import net.minecraft.client.Minecraft;
@@ -28,7 +29,6 @@ import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Allows taking snapshots of a storage at a certain point in time
@@ -69,15 +69,14 @@ public class StorageSnapshot implements GuiConstants {
         if (true || (this.lastUpdated < current && this.storage.getLastUpdated() > this.lastUpdated))    {
             this.lastUpdated = current;
             //TODO: we need to optimize this a LOT
-            List<Map.Entry<StackIdentifier, AtomicLong>> list = new ArrayList<>(this.storage.getStacks().entrySet());
+            List<Map.Entry<StackIdentifier, BigStack>> list = new ArrayList<>(this.storage.getStacks().entrySet());
             int off = this.scrollPos * this.width;
             for (int i = 0; i < this.width * this.height; i++)   {
                 int pos = i + off;
                 if (pos >= list.size()) {
                     this.stacks[i] = null;
                 } else {
-                    Map.Entry<StackIdentifier, AtomicLong> entry = list.get(pos);
-                    this.stacks[i] = new BigStack(entry.getKey(), entry.getValue());
+                    this.stacks[i] = list.get(pos).getValue();
                 }
             }
         }

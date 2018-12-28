@@ -22,6 +22,7 @@ import lombok.NonNull;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.util.CoolAtomicLong;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -33,7 +34,6 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
@@ -73,7 +73,7 @@ public class PacketRequestItem implements IMessage {
                 if (interweb == null) {
                     ctx.getServerHandler().disconnect(new TextComponentString(String.format("Received invalid network: %s", message.networkId)));
                 } else {
-                    AtomicLong count = interweb.getInventory().getCountAtomic(message.identifier);
+                    CoolAtomicLong count = interweb.getInventory().getCountAtomic(message.identifier);
                     if (count != null && count.get() >= 0L) {
                         ItemStack stack = message.identifier.getAsItemStack();
                         int maxStackSize = message.identifier.getItem().getItemStackLimit(stack);
@@ -82,6 +82,8 @@ public class PacketRequestItem implements IMessage {
                         FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                             if (message.targetSlot == -999) {
                                 ctx.getServerHandler().player.inventory.setItemStack(stack);
+                            } else if (message.targetSlot == -1) {
+                                ctx.getServerHandler().player.inventory.addItemStackToInventory(stack);
                             } else {
                                 ctx.getServerHandler().player.inventory.setInventorySlotContents(message.targetSlot, stack);
                             }

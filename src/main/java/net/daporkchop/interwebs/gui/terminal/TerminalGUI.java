@@ -31,8 +31,10 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.item.Item;
+import net.minecraft.inventory.ClickType;
+import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
 
         this.interweb = te.getInterweb();
         this.snapshot = new StorageSnapshot(this.interweb.getInventory());
-        for (int x = 0; x < TERMINAL_SLOTS_WIDTH; x++)  {
+        for (int x = 0; x < TERMINAL_SLOTS_WIDTH; x++) {
             for (int y = 0; y < TERMINAL_SLOTS_HEIGHT; y++) {
                 this.slots.add(new BigSlot(
                         8 + x * 18,
@@ -87,7 +89,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
 
         for (int i = TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT - 1; i >= 0; i--) {
             BigSlot slot = this.slots.get(i);
-            if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY))  {
+            if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY)) {
                 GlStateManager.disableLighting();
                 GlStateManager.disableDepth();
                 int j1 = slot.x;
@@ -116,24 +118,37 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        if (mouseButton == 0)   {
-            for (int i = TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT - 1; i >= 0; i--) {
-                BigSlot slot = this.slots.get(i);
-                if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY))  {
-                    ItemStack inHand = this.mc.player.inventory.getItemStack();
-                    if (inHand != null && !inHand.isEmpty())  {
-                        PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, inHand.getCount(), this.interweb.getUuid()));
-                        this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
-                    } else {
-                        BigStack stack = slot.getStack();
-                        if (stack != null)  {
-                            PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(-999, stack.getIdentifier(), this.interweb.getUuid()));
+        for (int i = TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT - 1; i >= 0; i--) {
+            BigSlot slot = this.slots.get(i);
+            if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY)) {
+                ItemStack inHand = this.mc.player.inventory.getItemStack();
+                if (inHand != null && !inHand.isEmpty()) {
+                    PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, inHand.getCount(), this.interweb.getUuid()));
+                    this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
+                } else {
+                    BigStack stack = slot.getStack();
+                    if (stack != null) {
+                        int targetSlot = -999;
+                        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+                            targetSlot = -1;
                         }
+                        PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(targetSlot, stack.getIdentifier(), this.interweb.getUuid()));
                     }
-                    return;
                 }
+                return;
             }
         }
         super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void handleMouseClick(Slot slotIn, int slotId, int mouseButton, ClickType type) {
+        if (mouseButton == 0 && type == ClickType.QUICK_MOVE)   {
+            int count = slotIn.getStack().getCount();
+            PacketHandler.INSTANCE.sendToServer(new PacketSendItem(slotId, count, this.interweb.getUuid()));
+            slotIn.decrStackSize(count);
+        } else {
+            super.handleMouseClick(slotIn, slotId, mouseButton, type);
+        }
     }
 }
