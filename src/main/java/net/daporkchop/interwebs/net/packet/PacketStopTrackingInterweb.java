@@ -19,8 +19,6 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.util.mixin.InterwebTracker;
@@ -54,7 +52,7 @@ public class PacketStopTrackingInterweb implements IMessage {
     public static class Handler implements IMessageHandler<PacketStopTrackingInterweb, IMessage>    {
         @Override
         public IMessage onMessage(PacketStopTrackingInterweb message, MessageContext ctx) {
-            Interweb interweb = ModInterwebs.getInstance(Side.SERVER).getLoaded(message.networkId);
+            Interweb interweb = Interwebs.getInstance(Side.SERVER).getLoaded(message.networkId);
             if (interweb != null){
                 ((InterwebTracker) ctx.getServerHandler().player).endTracking(interweb);
             }

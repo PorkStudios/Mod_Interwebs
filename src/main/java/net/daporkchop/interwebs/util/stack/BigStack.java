@@ -15,9 +15,13 @@
 
 package net.daporkchop.interwebs.util.stack;
 
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.NonNull;
 import net.daporkchop.interwebs.util.Util;
+import net.daporkchop.lib.binary.NettyByteBufUtil;
+import net.daporkchop.lib.binary.stream.DataIn;
+import net.daporkchop.lib.binary.stream.DataOut;
 import net.daporkchop.lib.primitive.PrimitiveConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -32,6 +36,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -48,6 +53,33 @@ public class BigStack implements PrimitiveConstants {
         this.count = count;
 
         this.fakedStack = new ItemStack(identifier.getItem(), 1, identifier.getMeta(), identifier.getNbt());
+    }
+
+    public static BigStack read(@NonNull ByteBuf buf)   {
+        try (DataIn in = NettyByteBufUtil.wrapIn(buf))     {
+            return read(in);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static BigStack read(@NonNull DataIn in) throws IOException  {
+        long count = in.readLong();
+        StackIdentifier identifier = StackIdentifier.read(in);
+        return identifier == null ? null : new BigStack(identifier, new AtomicLong(count));
+    }
+
+    public void write(@NonNull ByteBuf buf) {
+        try (DataOut out = NettyByteBufUtil.wrapOut(buf))   {
+            this.write(out);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void write(@NonNull DataOut out) throws IOException  {
+        out.writeLong(this.count.get());
+        this.identifier.write(out);
     }
 
     public Item getItem() {

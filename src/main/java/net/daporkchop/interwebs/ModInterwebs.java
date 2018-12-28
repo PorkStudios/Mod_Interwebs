@@ -93,40 +93,4 @@ public class ModInterwebs {
         proxy.postInit(event);
     }
 
-    @Mod.EventHandler
-    public void serverStarting(@NonNull FMLServerStartingEvent event)   {
-        logger.debug("Setting server interwebs...");
-        this.interwebs_serverInstance = new Interwebs(event.getServer().getFile("interwebs"));
-    }
-
-    @Mod.EventHandler
-    public void serverStopping(@NonNull FMLServerStoppingEvent event)   {
-        logger.debug("Clearing server interwebs...");
-        this.interwebs_serverInstance.unload();
-        this.interwebs_serverInstance = null;
-    }
-
-    public static Interwebs getInstance(@NonNull World world)    {
-        return getInstance(world.isRemote);
-    }
-
-    public static Interwebs getInstance(@NonNull Side side) {
-        return getInstance(side == Side.CLIENT);
-    }
-
-    public static Interwebs getInstance(boolean isRemote)    {
-        if (isRemote)   {
-            if (INSTANCE.interwebs_clientInstance == null)  {
-                throw new IllegalStateException("client instance not set up!");
-            } else {
-                return INSTANCE.interwebs_clientInstance;
-            }
-        } else {
-            if (INSTANCE.interwebs_serverInstance == null)  {
-                throw new IllegalStateException("server instance not set up!");
-            } else {
-                return INSTANCE.interwebs_serverInstance;
-            }
-        }
-    }
 }

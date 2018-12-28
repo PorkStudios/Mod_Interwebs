@@ -20,12 +20,22 @@ import lombok.NonNull;
 import net.daporkchop.interwebs.gui.GuiConstants;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.inventory.StorageSnapshot;
+import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.net.packet.PacketRequestItem;
+import net.daporkchop.interwebs.net.packet.PacketSendItem;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
+import net.daporkchop.interwebs.util.inventory.BigSlot;
 import net.daporkchop.interwebs.util.stack.BigStack;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author DaPorkchop_
@@ -34,6 +44,7 @@ import net.minecraft.client.renderer.RenderHelper;
 public class TerminalGUI extends GuiContainer implements GuiConstants {
     private final Interweb interweb;
     private final StorageSnapshot snapshot;
+    private final List<BigSlot> slots = new ArrayList<>(TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT);
 
     public TerminalGUI(TileEntityTerminal te, TerminalContainer container) {
         super(container);
@@ -43,6 +54,16 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
 
         this.interweb = te.getInterweb();
         this.snapshot = new StorageSnapshot(this.interweb.getInventory());
+        for (int x = 0; x < TERMINAL_SLOTS_WIDTH; x++)  {
+            for (int y = 0; y < TERMINAL_SLOTS_HEIGHT; y++) {
+                this.slots.add(new BigSlot(
+                        8 + x * 18,
+                        20 + y * 18,
+                        x * TERMINAL_SLOTS_HEIGHT + y,
+                        this.snapshot
+                ));
+            }
+        }
     }
 
     @Override
@@ -72,5 +93,26 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
         stack.renderItemOverlayIntoGUI(this.itemRender, font, x, y, altText);
         this.zLevel = 0.0F;
         this.itemRender.zLevel = 0.0F;
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        if (mouseButton == 0)   {
+            for (int i = TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT - 1; i >= 0; i--) {
+                BigSlot slot = this.slots.get(i);
+                if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY))  {
+                    ItemStack inHand = this.mc.player.inventory.getItemStack();
+                    if (inHand != null && !inHand.isEmpty())  {
+                        PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, inHand.getCount(), this.interweb.getUuid()));
+                        this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
+                    } else {
+                        BigStack stack = slot.getStack(TERMINAL_SLOTS_HEIGHT);
+                        PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(-999, stack.getIdentifier(), this.interweb.getUuid()));
+                    }
+                    return;
+                }
+            }
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 }

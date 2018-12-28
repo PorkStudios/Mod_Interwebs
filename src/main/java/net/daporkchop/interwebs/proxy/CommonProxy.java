@@ -18,15 +18,14 @@ package net.daporkchop.interwebs.proxy;
 import lombok.NonNull;
 import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.block.InterwebsBlocks;
+import net.daporkchop.interwebs.interweb.Interwebs;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.Logger;
 
@@ -78,5 +77,18 @@ public class CommonProxy {
     }
 
     public void postInit(@NonNull FMLPostInitializationEvent event) {
+    }
+
+    @Mod.EventHandler
+    public void serverStarting(@NonNull FMLServerStartingEvent event)   {
+        logger.debug("Setting server interwebs...");
+        ModInterwebs.INSTANCE.interwebs_serverInstance = new Interwebs(event.getServer().getFile("interwebs"));
+    }
+
+    @Mod.EventHandler
+    public void serverStopping(@NonNull FMLServerStoppingEvent event)   {
+        logger.debug("Clearing server interwebs...");
+        ModInterwebs.INSTANCE.interwebs_serverInstance.unload();
+        ModInterwebs.INSTANCE.interwebs_serverInstance = null;
     }
 }

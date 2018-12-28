@@ -16,11 +16,32 @@
 package net.daporkchop.interwebs.item;
 
 import net.daporkchop.interwebs.ModInterwebs;
+import net.daporkchop.interwebs.block.InterwebsBlocks;
+import net.daporkchop.interwebs.block.PorkBlock;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import java.lang.reflect.Field;
 
 /**
  * @author DaPorkchop_
  */
 @GameRegistry.ObjectHolder(ModInterwebs.MOD_ID)
 public class InterwebsItems {
+    @SideOnly(Side.CLIENT)
+    public static void initModels() {
+        try {
+            for (Field field : InterwebsBlocks.class.getDeclaredFields())    {
+                if (PorkItem.class.isAssignableFrom(field.getType()))  {
+                    ((PorkItem) field.get(null)).initModel();
+                }
+            }
+        } catch (IllegalAccessException e)  {
+            throw new RuntimeException(e);
+        }
+    }
 }

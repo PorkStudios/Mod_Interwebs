@@ -15,13 +15,22 @@
 
 package net.daporkchop.interwebs.util.stack;
 
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.NonNull;
+import net.daporkchop.lib.binary.NettyByteBufUtil;
+import net.daporkchop.lib.binary.stream.DataIn;
+import net.daporkchop.lib.binary.stream.DataOut;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -61,6 +70,42 @@ public class StackIdentifier {
         } else {
             this.meta = meta;
         }
+    }
+
+    public static StackIdentifier read(@NonNull ByteBuf buf)    {
+        try (DataIn in = NettyByteBufUtil.wrapIn(buf))  {
+            return read(in);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static StackIdentifier read(@NonNull DataIn in) throws IOException   {
+        NBTTagCompound nbt = in.readBoolean() ? CompressedStreamTools.read(new DataInputStream(in)) : null;
+        int meta = in.readInt();
+        Item item = Item.getByNameOrId(in.readUTF());
+        return item == null ? null : new StackIdentifier(item, meta, nbt);
+    }
+
+    public void write(@NonNull ByteBuf buf) {
+        try (DataOut out = NettyByteBufUtil.wrapOut(buf))   {
+            this.write(out);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void write(@NonNull DataOut out) throws IOException {
+        out.writeBoolean(this.nbt != null);
+        if (this.nbt != null)   {
+            CompressedStreamTools.write(this.nbt, new DataOutputStream(out));
+        }
+        out.writeInt(this.meta);
+        out.writeUTF(this.item.getRegistryName().toString());
+    }
+
+    public ItemStack getAsItemStack()   {
+        return new ItemStack(this.item, 1, this.meta, this.nbt);
     }
 
     @Override

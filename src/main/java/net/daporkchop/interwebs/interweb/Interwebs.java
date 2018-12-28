@@ -24,12 +24,15 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
 import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
 import net.daporkchop.lib.binary.UTF8;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +64,8 @@ public class Interwebs {
                     .expireAfterAccess(5L, TimeUnit.MINUTES)
                     .removalListener((RemovalListener<Key, Interweb>) notification -> {
                         switch (notification.getCause()) {
-                            case EXPIRED: {
+                            case EXPIRED:
+                            case EXPLICIT: {
                                 PacketHandler.INSTANCE.sendToServer(new PacketStopTrackingInterweb(notification.getKey().uuid));
                             }
                             break;
@@ -91,7 +95,8 @@ public class Interwebs {
                     .expireAfterAccess(5L, TimeUnit.MINUTES)
                     .removalListener((RemovalListener<Key, Interweb>) notification -> {
                         switch (notification.getCause()) {
-                            case EXPIRED: {
+                            case EXPIRED:
+                            case EXPLICIT: {
                                 Interweb interweb = notification.getValue();
                                 if (interweb.isDirty()) {
                                     NBTTagCompound tag = new NBTTagCompound();
@@ -126,6 +131,49 @@ public class Interwebs {
                             }
                         }
                     });
+        }
+    }
+
+    /**
+     * Get an interwebs instance for a given world
+     *
+     * @param world the world to get an instance for
+     * @return an instance of {@link Interwebs}
+     */
+    public static Interwebs getInstance(@NonNull World world) {
+        return getInstance(world.isRemote);
+    }
+
+    /**
+     * Get an interwebs instance for a given side
+     *
+     * @param side the side to get an instance for
+     * @return an instance of {@link Interwebs}
+     */
+    public static Interwebs getInstance(@NonNull Side side) {
+        return getInstance(side == Side.CLIENT);
+    }
+
+    /**
+     * Get an interwebs instance for a given side
+     *
+     * @param isRemote whether or not the world is remote on the given side. Should be {@code true} for clients, and
+     *                 {@code false} for servers.
+     * @return an instance of {@link Interwebs}
+     */
+    public static Interwebs getInstance(boolean isRemote) {
+        if (isRemote) {
+            if (ModInterwebs.INSTANCE.interwebs_clientInstance == null) {
+                throw new IllegalStateException("client instance not set up!");
+            } else {
+                return ModInterwebs.INSTANCE.interwebs_clientInstance;
+            }
+        } else {
+            if (ModInterwebs.INSTANCE.interwebs_serverInstance == null) {
+                throw new IllegalStateException("server instance not set up!");
+            } else {
+                return ModInterwebs.INSTANCE.interwebs_serverInstance;
+            }
         }
     }
 

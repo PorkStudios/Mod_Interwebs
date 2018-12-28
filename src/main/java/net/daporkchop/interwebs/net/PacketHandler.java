@@ -16,10 +16,7 @@
 package net.daporkchop.interwebs.net;
 
 import lombok.NonNull;
-import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
-import net.daporkchop.interwebs.net.packet.PacketInterwebData;
-import net.daporkchop.interwebs.net.packet.PacketSendItem;
-import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
+import net.daporkchop.interwebs.net.packet.*;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -43,9 +40,11 @@ public class PacketHandler {
         register(PacketSendItem.class, PacketSendItem.Handler.class, Side.SERVER);
         register(PacketBeginTrackingInterweb.class, PacketBeginTrackingInterweb.Handler.class, Side.SERVER);
         register(PacketStopTrackingInterweb.class, PacketStopTrackingInterweb.Handler.class, Side.SERVER);
+        register(PacketRequestItem.class, PacketRequestItem.Handler.class, Side.SERVER);
 
         //clientbound
         register(PacketInterwebData.class, PacketInterwebData.Handler.class, Side.CLIENT);
+        register(PacketItemData.class, PacketItemData.Handler.class, Side.CLIENT);
     }
 
     private static <P extends IMessage, R extends IMessage> void register(@NonNull Class<P> packetClass, @NonNull Class<? extends IMessageHandler<P, R>> handlerClass, @NonNull Side side) {

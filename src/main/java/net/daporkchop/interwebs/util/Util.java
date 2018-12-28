@@ -15,6 +15,10 @@
 
 package net.daporkchop.interwebs.util;
 
+import io.netty.buffer.ByteBuf;
+import lombok.NonNull;
+import net.daporkchop.lib.binary.UTF8;
+
 import static java.lang.Math.floor;
 
 /**
@@ -31,6 +35,7 @@ public class Util {
             "E"  //quintillions (exa)
     };
 
+    //TODO: make this a lot better
     public static String valueOf(long count)    {
         if (count < 1000L)  {
             return String.valueOf(count);
@@ -42,5 +47,24 @@ public class Util {
             power *= 1000L;
         }
         return String.format("%.1f%s", floor((double) count / (double) power * 10.0d) * 0.1d, suffixes[size]);
+    }
+
+    public static void writeUTF(@NonNull ByteBuf buf, @NonNull String s)   {
+        writeBytes(buf, s.getBytes(UTF8.utf8));
+    }
+
+    public static void writeBytes(@NonNull ByteBuf buf, @NonNull byte[] b) {
+        buf.writeInt(b.length);
+        buf.writeBytes(b);
+    }
+
+    public static String readUTF(@NonNull ByteBuf buf)  {
+        return new String(readBytes(buf), UTF8.utf8);
+    }
+
+    public static byte[] readBytes(@NonNull ByteBuf buf)    {
+        byte[] b = new byte[buf.readInt()];
+        buf.readBytes(b);
+        return b;
     }
 }

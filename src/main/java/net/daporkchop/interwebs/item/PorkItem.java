@@ -13,40 +13,33 @@
  *
  */
 
-package net.daporkchop.interwebs.mixin.world;
+package net.daporkchop.interwebs.item;
 
-import net.daporkchop.interwebs.interweb.Interwebs;
-import net.daporkchop.interwebs.util.mixin.InterwebsHolder;
-import net.minecraft.world.World;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import java.io.File;
+import lombok.NonNull;
+import net.daporkchop.interwebs.ModInterwebs;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * @author DaPorkchop_
  */
-@Mixin(World.class)
-public abstract class MixinWorld implements InterwebsHolder {
-    @Shadow
-    @Final
-    public boolean isRemote;
-    private Interwebs interwebs;
+public abstract class PorkItem extends Item {
+    public PorkItem()    {
+        String className = this.getClass().getSimpleName();
+        String stripped = className.replace("Item", "");
+        this.setRegistryName(new ResourceLocation(ModInterwebs.MOD_ID, stripped.toLowerCase()));
 
-    /*@Inject(
-            method = "Lnet/minecraft/world/World;init()Lnet/minecraft/world/World;",
-            at = @At("HEAD")
-    )
-    public void preInit(CallbackInfoReturnable<World> ci)   {
-        if (this.isRemote) {
-            this.interwebs = new Interwebs(null);
-        } else {
-            //File root =
-        }
-    }*/
+        this.setCreativeTab(CreativeTabs.REDSTONE);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void initModel() {
+        ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(this.getRegistryName(), "inventory"));
+    }
 }

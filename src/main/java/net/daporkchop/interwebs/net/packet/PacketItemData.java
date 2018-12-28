@@ -21,44 +21,60 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
-import net.daporkchop.interwebs.util.mixin.InterwebTracker;
+import net.daporkchop.interwebs.util.stack.StackIdentifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
+import org.apache.commons.compress.archivers.sevenz.CLI;
 
 import java.util.UUID;
 
 /**
+ * Sent to add an item type to a network and/or update the count
+ *
  * @author DaPorkchop_
  */
 @AllArgsConstructor
 @NoArgsConstructor
-public class PacketBeginTrackingInterweb implements IMessage {
+public class PacketItemData implements IMessage {
+    public long count;
+    @NonNull
+    public StackIdentifier identifier;
     @NonNull
     public UUID networkId;
 
     @Override
     public void fromBytes(@NonNull ByteBuf buf) {
+        this.count = buf.readLong();
+        this.identifier = StackIdentifier.read(buf);
         this.networkId = new UUID(buf.readLong(), buf.readLong());
     }
 
     @Override
     public void toBytes(@NonNull ByteBuf buf) {
+        buf.writeLong(this.count);
+        this.identifier.write(buf);
         buf.writeLong(this.networkId.getMostSignificantBits());
         buf.writeLong(this.networkId.getLeastSignificantBits());
     }
 
-    public static class Handler implements IMessageHandler<PacketBeginTrackingInterweb, PacketInterwebData> {
+    public static class Handler implements IMessageHandler<PacketItemData, IMessage>    {
         @Override
-        public PacketInterwebData onMessage(PacketBeginTrackingInterweb message, MessageContext ctx) {
-            Interweb interweb = Interwebs.getInstance(Side.SERVER).loadAndGet(message.networkId);
-            if (interweb == null) {
-                return null;
+        public IMessage onMessage(PacketItemData message, MessageContext ctx) {
+            if (message.identifier == null) {
+                Minecraft.getMinecraft().player.sendMessage(new TextComponentString("\u00A7cReceived invalid item identifier!"));
             } else {
-                ((InterwebTracker) ctx.getServerHandler().player).beginTracking(interweb);
-                return new PacketInterwebData(message.networkId, interweb.getName());
+                Interweb interweb = Interwebs.getInstance(Side.CLIENT).getLoaded(message.networkId);
+                if (interweb == null) {
+                    Minecraft.getMinecraft().player.sendMessage(new TextComponentString(String.format("\u00A7cReceived invalid network id: %s", message.networkId)));
+                } else {
+                    interweb.getInventory().getCountAtomic(message.identifier).set(message.count);
+                }
             }
+            return null;
         }
     }
 }

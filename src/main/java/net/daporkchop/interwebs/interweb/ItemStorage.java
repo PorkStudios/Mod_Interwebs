@@ -124,6 +124,17 @@ public class ItemStorage {
         return list;
     }
 
+    public void cleanup() {
+        this.stacks.entrySet().removeIf(entry -> {
+            if (entry.getValue().get() == 0L) {
+                this.markDirty();
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+
     public ItemStorage updateLastUpdated() {
         this.lastUpdated = System.currentTimeMillis();
         return this;
