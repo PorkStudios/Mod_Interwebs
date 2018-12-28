@@ -101,7 +101,7 @@ public class ItemStorage {
                         new StackIdentifier(
                                 Item.getByNameOrId(compound.getString("name")),
                                 compound.getInteger("meta"),
-                                compound.getCompoundTag("nbt")
+                                compound.hasKey("nbt") ? compound.getCompoundTag("nbt") : null
                         ),
                         new AtomicLong(compound.getLong("count"))
                 ))

@@ -80,7 +80,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
         RenderHelper.enableGUIStandardItemLighting();
         //hehe this actually draws the items
         this.snapshot.update(System.currentTimeMillis() >>> 9L)
-                .forEach((stack, x, y) -> this.drawStack(stack, this.guiLeft + 8 + x * 18, this.guiTop + 20 + y * 18, null));
+                .forEach((stack, x, y) -> this.drawStack(stack, 0 * this.guiLeft + 8 + x * 18, 0 * this.guiTop + 20 + y * 18, null));
         RenderHelper.disableStandardItemLighting();
 
         this.fontRenderer.drawString(this.interweb.getName(), 8, 6, 4210752);
@@ -126,7 +126,9 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
                         this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
                     } else {
                         BigStack stack = slot.getStack();
-                        PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(-999, stack.getIdentifier(), this.interweb.getUuid()));
+                        if (stack != null)  {
+                            PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(-999, stack.getIdentifier(), this.interweb.getUuid()));
+                        }
                     }
                     return;
                 }
