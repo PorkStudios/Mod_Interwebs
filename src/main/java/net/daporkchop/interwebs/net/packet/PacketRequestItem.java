@@ -77,7 +77,7 @@ public class PacketRequestItem implements IMessage {
                     if (count != null && count.get() >= 0L) {
                         ItemStack stack = message.identifier.getAsItemStack();
                         int maxStackSize = message.identifier.getItem().getItemStackLimit(stack);
-                        int size = (int) count.updateAndGet(l -> l - Math.min(l, maxStackSize));
+                        int size = (int) (count.get() - count.updateAndGet(l -> l - Math.min(l, maxStackSize)));
                         stack.setCount(size);
                         FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
                             if (message.targetSlot == -999) {

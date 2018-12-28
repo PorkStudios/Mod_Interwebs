@@ -277,7 +277,7 @@ public class Interwebs {
     @Getter
     @Accessors(chain = true)
     //TODO: differentiate between player and group interwebs
-    private static class Key {
+    public static class Key {
         @NonNull
         private final UUID uuid;
 
@@ -308,7 +308,7 @@ public class Interwebs {
 
     @Getter
     @Accessors(chain = true)
-    private static class InitializerKey extends Key {
+    public static class InitializerKey extends Key {
         private final String name;
 
         public InitializerKey(UUID uuid, @NonNull String name) {
@@ -322,7 +322,7 @@ public class Interwebs {
         }
     }
 
-    private static class NonCreating extends Key {
+    public static class NonCreating extends Key {
         public NonCreating(UUID uuid) {
             super(uuid);
         }

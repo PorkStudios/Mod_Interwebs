@@ -58,7 +58,7 @@ public class PacketBeginTrackingInterweb implements IMessage {
                 return null;
             } else {
                 ((InterwebTracker) ctx.getServerHandler().player).beginTracking(interweb);
-                PacketHandler.INSTANCE.sendTo(new PacketFullItemStorageData(interweb.getInventory().getStacks(), interweb.getUuid()), ctx.getServerHandler().player);
+                PacketHandler.INSTANCE.sendTo(new PacketFullItemStorageData(true, interweb.getInventory().getStacks(), interweb.getUuid()), ctx.getServerHandler().player);
                 return new PacketInterwebData(message.networkId, interweb.getName());
             }
         }

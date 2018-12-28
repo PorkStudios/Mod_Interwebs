@@ -64,7 +64,6 @@ public class ModInterwebs {
 
     public final Interwebs interwebs_serverInstance = new Interwebs(new File("."));
     public final Interwebs interwebs_clientInstance = new Interwebs(null);
-    public static long trackerTimeStart;
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
@@ -104,7 +103,6 @@ public class ModInterwebs {
         } else {
             logger.debug("Setting dedicated server interwebs...");
         }
-        trackerTimeStart = System.currentTimeMillis();
         this.interwebs_serverInstance.getInterwebCache().invalidateAll();
         this.interwebs_serverInstance.setRoot(new File(FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0).getPerWorldStorage().saveHandler.getWorldDirectory(), "interwebs"));
     }

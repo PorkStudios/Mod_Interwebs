@@ -19,12 +19,15 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.net.packet.PacketItemData;
 import net.daporkchop.interwebs.util.CoolAtomicLong;
-import net.daporkchop.interwebs.util.FriendlyEmptySet;
 import net.daporkchop.interwebs.util.stack.BigStack;
 import net.daporkchop.interwebs.util.stack.StackIdentifier;
 import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.primitive.function.bifunction.LongObjectObjectBiFunction;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -38,8 +41,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
 import java.util.function.LongUnaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
@@ -49,25 +54,37 @@ import java.util.stream.StreamSupport;
  *
  * @author DaPorkchop_
  */
-@RequiredArgsConstructor
 @Accessors(chain = true)
 @Getter
 public class ItemStorage {
-    @NonNull
     private final Interweb interweb;
     //TODO: test if synchronizing this would give better performance
     private final Map<StackIdentifier, BigStack> stacks = new ConcurrentHashMap<>();
-    Set<BigStack> dirtyStacks = new FriendlyEmptySet<>();
-    private final Function<StackIdentifier, BigStack> stackSupplier_1 = identifier -> {
-        BigStack stack = new BigStack(identifier);
-        stack.setCount(new CoolAtomicLong(l -> this.dirtyStacks.add(stack)));
-        return stack;
-    };
-    private final LongObjectObjectBiFunction<StackIdentifier, BigStack> stackSupplier_2 = (count, identifier) -> {
-        BigStack stack = new BigStack(identifier);
-        stack.setCount(new CoolAtomicLong(l -> this.dirtyStacks.add(stack), count));
-        return stack;
-    };
+
+    private final Consumer<BigStack> updateFunction;
+    private final Function<StackIdentifier, BigStack> stackSupplier_1;
+    private final LongObjectObjectBiFunction<StackIdentifier, BigStack> stackSupplier_2;
+
+    public ItemStorage(@NonNull Interweb interweb)  {
+        this.interweb = interweb;
+
+        this.updateFunction = stack -> this.interweb.getTrackingPlayers().forEach(player -> {
+            if (!player.world.isRemote)  {
+                PacketHandler.INSTANCE.sendToWithoutFlush(new PacketItemData(stack.getCount().get(), stack.getIdentifier(), this.interweb.getUuid()), (EntityPlayerMP) player);
+            }
+        });
+
+        this.stackSupplier_1 = identifier -> {
+            BigStack stack = new BigStack(identifier);
+            stack.setCount(new CoolAtomicLong(l -> this.updateFunction.accept(stack)));
+            return stack;
+        };
+        this.stackSupplier_2 = (count, identifier) -> {
+            BigStack stack = new BigStack(identifier);
+            stack.setCount(new CoolAtomicLong(l -> this.updateFunction.accept(stack), count));
+            return stack;
+        };
+    }
 
     public int size() {
         return this.stacks.size();
@@ -129,14 +146,16 @@ public class ItemStorage {
 
     public NBTTagList write(@NonNull NBTTagList list) {
         this.stacks.entrySet().stream()
-                .map(entry -> {
+                .map(Map.Entry::getValue)
+                .filter(stack -> stack.getCount().get() > 0L && stack.getItem() != Items.AIR)
+                .map(stack -> {
                     NBTTagCompound tag = new NBTTagCompound();
-                    tag.setString("name", entry.getKey().getItem().getRegistryName().toString());
-                    tag.setInteger("meta", entry.getKey().getMeta());
-                    if (entry.getKey().getNbt() != null && !entry.getKey().getNbt().isEmpty()) {
-                        tag.setTag("nbt", entry.getKey().getNbt());
+                    tag.setString("name", stack.getItem().getRegistryName().toString());
+                    tag.setInteger("meta", stack.getMeta());
+                    if (stack.getNbt() != null && !stack.getNbt().isEmpty()) {
+                        tag.setTag("nbt", stack.getNbt());
                     }
-                    tag.setLong("count", entry.getValue().getCount().get());
+                    tag.setLong("count", stack.getCount().get());
                     return tag;
                 })
                 .forEach(list::appendTag);
@@ -153,10 +172,4 @@ public class ItemStorage {
             }
         });
     }
-
-    public ItemStorage updateLastUpdated() {
-        this.lastUpdated = System.currentTimeMillis();
-        return this;
-    }
-
 }

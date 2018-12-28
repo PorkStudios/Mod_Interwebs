@@ -123,8 +123,16 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
             if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY)) {
                 ItemStack inHand = this.mc.player.inventory.getItemStack();
                 if (inHand != null && !inHand.isEmpty()) {
-                    PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, inHand.getCount(), this.interweb.getUuid()));
-                    this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
+                    int count = -1;
+                    if (mouseButton == 0)   {
+                        count = inHand.getCount();
+                    } else if (mouseButton == 1){
+                        count = 1;
+                    }
+                    if (count > 0) {
+                        PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, count, this.interweb.getUuid()));
+                        this.mc.player.inventory.getItemStack().splitStack(count);
+                    }
                 } else {
                     BigStack stack = slot.getStack();
                     if (stack != null) {
@@ -145,7 +153,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
     protected void handleMouseClick(Slot slotIn, int slotId, int mouseButton, ClickType type) {
         if (mouseButton == 0 && type == ClickType.QUICK_MOVE)   {
             int count = slotIn.getStack().getCount();
-            PacketHandler.INSTANCE.sendToServer(new PacketSendItem(slotId, count, this.interweb.getUuid()));
+            PacketHandler.INSTANCE.sendToServer(new PacketSendItem(slotIn.getSlotIndex(), count, this.interweb.getUuid()));
             slotIn.decrStackSize(count);
         } else {
             super.handleMouseClick(slotIn, slotId, mouseButton, type);

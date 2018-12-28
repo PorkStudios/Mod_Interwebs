@@ -17,6 +17,7 @@ package net.daporkchop.interwebs.net;
 
 import lombok.NonNull;
 import net.daporkchop.interwebs.net.packet.*;
+import net.daporkchop.interwebs.util.CoolAndSimpleNetworkWrapper;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
@@ -31,10 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PacketHandler {
     private static final AtomicInteger ID = new AtomicInteger(0);
 
-    public static SimpleNetworkWrapper INSTANCE = null;
+    public static CoolAndSimpleNetworkWrapper INSTANCE = null;
 
     public static void register(@NonNull String channelName)    {
-        INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(channelName);
+        INSTANCE = new CoolAndSimpleNetworkWrapper(channelName);
 
         //serverbound
         register(PacketSendItem.class, PacketSendItem.Handler.class, Side.SERVER);
