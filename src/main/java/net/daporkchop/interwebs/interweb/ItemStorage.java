@@ -62,11 +62,11 @@ public class ItemStorage {
         this.dirty = true;
     }
 
-    public AtomicLong getCountA(@NonNull StackIdentifier identifier) {
+    public AtomicLong getCountAtomic(@NonNull StackIdentifier identifier) {
         return this.stacks.computeIfAbsent(identifier, i -> new AtomicLong());
     }
 
-    public AtomicLong getCountA(@NonNull ItemStack stack) {
+    public AtomicLong getCountAtomic(@NonNull ItemStack stack) {
         return this.stacks.computeIfAbsent(StackIdentifier.of(stack), s -> new AtomicLong());
     }
 
@@ -79,7 +79,7 @@ public class ItemStorage {
     }
 
     public long addItem(@NonNull ItemStack stack) {
-        return this.getCountA(stack).addAndGet(stack.getCount());
+        return this.getCountAtomic(stack).addAndGet(stack.getCount());
     }
 
     public long decr(@NonNull StackIdentifier identifierIn, long amount) {

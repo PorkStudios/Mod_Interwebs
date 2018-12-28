@@ -19,9 +19,16 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.daporkchop.interwebs.ModInterwebs;
+import net.daporkchop.interwebs.interweb.Interweb;
+import net.daporkchop.interwebs.interweb.Interwebs;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.UUID;
 
@@ -57,9 +64,19 @@ public class PacketSendItem implements IMessage {
     public static class Handler implements IMessageHandler<PacketSendItem, IMessage>    {
         @Override
         public IMessage onMessage(PacketSendItem message, MessageContext ctx) {
-            //i don't care if this is handled concurrently, everything interweb-related is thread-safe!
             //TODO: the current behaviour could be exploited to allow users to send items to a network without physical access to a terminal
-
+            Interweb interweb = ModInterwebs.getInstance(Side.SERVER).getFastOrPossiblyLoad(message.networkId);
+            if (interweb == null)   {
+                ctx.getServerHandler().disconnect(new TextComponentString(String.format("Received invalid network: %s", message.networkId)));
+            } else {
+                FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
+                    IInventory inventory = ctx.getServerHandler().player.inventory;
+                    if (inventory.getStackInSlot(message.slot).getCount() < message.count) {
+                        ctx.getServerHandler().disconnect(new TextComponentString("Attempted to send too many items!"));
+                    }
+                    interweb.getInventory().addItem(inventory.decrStackSize(message.slot, message.count));
+                });
+            }
             return null;
         }
     }

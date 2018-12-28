@@ -23,18 +23,21 @@ import net.daporkchop.interwebs.gui.GuiProxy;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.proxy.CommonProxy;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -57,57 +60,72 @@ public class ModInterwebs {
     public static final String VERSION = "0.0.1";
 
     public Interwebs interwebs_serverInstance;
+    public Interwebs interwebs_clientInstance;
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
 
+    @SidedProxy(
+            clientSide = "net.daporkchop.interwebs.proxy.ClientProxy",
+            serverSide = "net.daporkchop.interwebs.proxy.ServerProxy"
+    )
+    public static CommonProxy proxy;
+
+    public static Logger logger;
+
     @Mod.EventHandler
     public void preInit(@NonNull FMLPreInitializationEvent event) {
+        logger = event.getModLog();
+        proxy.preInit(event);
+
         PacketHandler.register(MOD_ID);
     }
 
     @Mod.EventHandler
     public void init(@NonNull FMLInitializationEvent event) {
+        proxy.init(event);
+
         NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, new GuiProxy());
     }
 
     @Mod.EventHandler
     public void postInit(@NonNull FMLPostInitializationEvent event) {
+        proxy.postInit(event);
     }
 
     @Mod.EventHandler
     public void serverStarting(@NonNull FMLServerStartingEvent event)   {
-        //this.interwebs_serverInstance = new Interwebs(event.getServer().getWorld(0).getPerWorldStorage().getUniqueDataId());
+        logger.debug("Setting server interwebs...");
+        this.interwebs_serverInstance = new Interwebs(event.getServer().getFile("interwebs"));
     }
 
-    @Mod.EventBusSubscriber
-    public static class ObjectRegistryHandler {
-        @SubscribeEvent
-        public static void addItems(@NonNull RegistryEvent.Register<Item> event) throws IllegalAccessException {
-            for (Field field : InterwebsBlocks.class.getDeclaredFields())    {
-                if (Block.class.isAssignableFrom(field.getType()))  {
-                    Block block = (Block) field.get(null);
-                    ResourceLocation registryName = block.getRegistryName();
-                    if (registryName == null)   {
-                        throw new NullPointerException();
-                    }
-                    event.getRegistry().register(new ItemBlock(block).setRegistryName(registryName));
-                }
-            }
-        }
+    @Mod.EventHandler
+    public void serverStopping(@NonNull FMLServerStoppingEvent event)   {
+        logger.debug("Clearing server interwebs...");
+        this.interwebs_serverInstance.unload();
+        this.interwebs_serverInstance = null;
+    }
 
-        @SubscribeEvent
-        @SuppressWarnings("unchecked")
-        public static void addBlocks(@NonNull RegistryEvent.Register<Block> event) throws IllegalAccessException, InstantiationException, InvocationTargetException {
-            for (Field field : InterwebsBlocks.class.getDeclaredFields())   {
-                try {
-                    if (Block.class.isAssignableFrom(field.getType())) {
-                        Constructor<? extends Block> constructor = ((Class<? extends Block>) field.getType()).getConstructor();
-                        event.getRegistry().register(constructor.newInstance());
-                    }
-                } catch (NoSuchMethodException e)   {
-                    //ignore
-                }
+    public static Interwebs getInstance(@NonNull World world)    {
+        return getInstance(world.isRemote);
+    }
+
+    public static Interwebs getInstance(@NonNull Side side) {
+        return getInstance(side == Side.CLIENT);
+    }
+
+    public static Interwebs getInstance(boolean isRemote)    {
+        if (isRemote)   {
+            if (INSTANCE.interwebs_clientInstance == null)  {
+                throw new IllegalStateException("client instance not set up!");
+            } else {
+                return INSTANCE.interwebs_clientInstance;
+            }
+        } else {
+            if (INSTANCE.interwebs_serverInstance == null)  {
+                throw new IllegalStateException("server instance not set up!");
+            } else {
+                return INSTANCE.interwebs_serverInstance;
             }
         }
     }

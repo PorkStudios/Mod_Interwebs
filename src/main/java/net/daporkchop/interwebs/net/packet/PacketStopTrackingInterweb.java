@@ -20,12 +20,14 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.util.mixin.InterwebTracker;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.UUID;
 
@@ -52,7 +54,7 @@ public class PacketStopTrackingInterweb implements IMessage {
     public static class Handler implements IMessageHandler<PacketStopTrackingInterweb, IMessage>    {
         @Override
         public IMessage onMessage(PacketStopTrackingInterweb message, MessageContext ctx) {
-            Interweb interweb = Interwebs.getInstance().getLoaded(message.networkId);
+            Interweb interweb = ModInterwebs.getInstance(Side.SERVER).getLoaded(message.networkId);
             if (interweb != null){
                 ((InterwebTracker) ctx.getServerHandler().player).endTracking(interweb);
             }

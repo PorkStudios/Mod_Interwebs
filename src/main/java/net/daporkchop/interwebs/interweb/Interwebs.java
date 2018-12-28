@@ -24,7 +24,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
 import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
@@ -49,7 +48,7 @@ public class Interwebs {
     private final File root;
     private final LoadingCache<Key, Interweb> interwebCache;
 
-    public Interwebs()  {
+    public Interwebs() {
         this(null);
     }
 
@@ -117,7 +116,7 @@ public class Interwebs {
                             if (tag == null) {
                                 if (key instanceof InitializerKey) {
                                     return new Interweb(key.uuid).setName(((InitializerKey) key).name);
-                                } else if (key instanceof NonCreating)  {
+                                } else if (key instanceof NonCreating) {
                                     return BLANK_INTERWEB;
                                 } else {
                                     return new Interweb(key.uuid).setName(key.uuid.toString());
@@ -130,33 +129,98 @@ public class Interwebs {
         }
     }
 
-    public static Interwebs getInstance() {
-        return ModInterwebs.INSTANCE.interwebs_serverInstance;
-    }
-
+    /**
+     * Gets the interweb for the given profile, creating a new one if it doesn't exist
+     *
+     * @param profile the profile whose interweb is to be gotten. If a new one is created, the profile's
+     *                name (see {@link GameProfile#getName()} will be used as the name
+     * @return the interweb for the given profile
+     */
     public Interweb computeIfAbsent(@NonNull GameProfile profile) {
         return this.interwebCache.getUnchecked(new InitializerKey(profile));
     }
 
+    /**
+     * Get an interweb with the given id, creating a new one if it doesn't exist.
+     *
+     * @param uuid the id of the interweb
+     * @return the interweb with the given id
+     */
     public Interweb computeIfAbsent(@NonNull UUID uuid) {
         return this.interwebCache.getUnchecked(new Key(uuid));
     }
 
+    /**
+     * Gets the interweb for the given id, creating a new one with the given name if it doesn't exist
+     *
+     * @param uuid the id of the interweb to get
+     * @param name the name that will be used if a new interweb is created
+     * @return the interweb with the given id
+     */
     public Interweb create(@NonNull UUID uuid, @NonNull String name) {
         return this.interwebCache.getUnchecked(new InitializerKey(uuid, name));
     }
 
+    /**
+     * Gets an interweb that is currently loaded for the given profile
+     *
+     * @param profile the profile whose interweb is to be gotten
+     * @return the profile's interweb, or {@code null} if the interweb isn't loaded. A return value of {@code null} does
+     * not necessarily mean that there is no interweb for the given profile, only that it isn't loaded.
+     */
     public Interweb getLoaded(@NonNull GameProfile profile) {
         return this.interwebCache.getIfPresent(profile.getId());
     }
 
+    /**
+     * Gets an interweb that is currently loaded for the given id
+     *
+     * @param uuid the id of the interweb that is to be gotten
+     * @return the interweb with the given id, or {@code null} if the interweb isn't loaded. A return value of {@code null} does
+     * not necessarily mean that there is no interweb with the given id, only that it isn't loaded.
+     */
     public Interweb getLoaded(@NonNull UUID uuid) {
         return this.interwebCache.getIfPresent(uuid);
     }
 
+    /**
+     * Gets an interweb with the given id, loading it if it's not currently loaded. Unlike {@link #computeIfAbsent(UUID)}, this
+     * will not create a new interweb if none could be found with the given id.
+     *
+     * @param uuid the id of the interweb to get
+     * @return the interweb with the given id, or {@code null} if none could be found in memory or on disk with the given id
+     */
     public Interweb loadAndGet(@NonNull UUID uuid) {
         Interweb interweb = this.interwebCache.getUnchecked(new NonCreating(uuid));
         return interweb == BLANK_INTERWEB ? null : interweb;
+    }
+
+    /**
+     * Gets an interweb with the given id, loading it if it's not currently loaded. The same as {@link #loadAndGet(UUID)},
+     * except this will be slightly faster for interwebs that are already loaded into memory due to the fact that it doesn't
+     * create a new instance of {@link NonCreating} unless the interweb couldn't be found in memory.
+     *
+     * @param uuid the id of the interweb to get
+     * @return the interweb with the given id, or {@code null} if none could be found in memory or on disk with the given id
+     */
+    public Interweb getFastOrPossiblyLoad(@NonNull UUID uuid) {
+        Interweb interweb = this.interwebCache.getIfPresent(uuid);
+        return interweb == null ? this.loadAndGet(uuid) : interweb;
+    }
+
+    /**
+     * Unloads this {@link Interwebs} instance, saving all currently loaded interwebs to disk. After this method has been called
+     * nothing else may be done to this instance.
+     *
+     * @return this instance of {@link Interwebs}
+     */
+    public Interwebs unload() {
+        if (this.root == null) {
+            throw new IllegalStateException("cannot save client interwebs!");
+        } else {
+            this.interwebCache.invalidateAll();
+        }
+        return this;
     }
 
     @RequiredArgsConstructor
@@ -208,7 +272,7 @@ public class Interwebs {
         }
     }
 
-    private static class NonCreating extends Key    {
+    private static class NonCreating extends Key {
         public NonCreating(UUID uuid) {
             super(uuid);
         }

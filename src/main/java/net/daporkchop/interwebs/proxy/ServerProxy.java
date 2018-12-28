@@ -13,49 +13,14 @@
  *
  */
 
-package net.daporkchop.interwebs.tile;
+package net.daporkchop.interwebs.proxy;
 
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.experimental.Accessors;
-import net.daporkchop.interwebs.ModInterwebs;
-import net.daporkchop.interwebs.interweb.Interweb;
-import net.daporkchop.interwebs.interweb.Interwebs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-
-import java.util.UUID;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * @author DaPorkchop_
  */
-@Accessors(chain = true)
-@Getter
-public class TileEntityTerminal extends TileEntity {
-    @NonNull
-    private UUID networkId;
-
-    private Interweb interweb;
-
-    @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        this.networkId = compound.getUniqueId("networkId");
-        super.readFromNBT(compound);
-    }
-
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        compound.setUniqueId("networkId", this.networkId);
-        return super.writeToNBT(compound);
-    }
-
-    public synchronized TileEntityTerminal init(@NonNull EntityPlayer player)    {
-        if (this.networkId != null) {
-            throw new IllegalStateException("already initialized!");
-        }
-        this.interweb = ModInterwebs.getInstance(player.world).computeIfAbsent(player.getGameProfile());
-        this.networkId = this.interweb.getUuid();
-        return this;
-    }
+@Mod.EventBusSubscriber(Side.SERVER)
+public class ServerProxy extends CommonProxy {
 }

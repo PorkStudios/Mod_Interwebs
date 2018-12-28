@@ -19,11 +19,13 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.UUID;
 
@@ -56,7 +58,7 @@ public class PacketInterwebData implements IMessage {
     public static class Handler implements IMessageHandler<PacketInterwebData, IMessage> {
         @Override
         public IMessage onMessage(PacketInterwebData message, MessageContext ctx) {
-            Interwebs.getInstance().computeIfAbsent(message.networkId).setName(message.name);
+            ModInterwebs.getInstance(Side.CLIENT).computeIfAbsent(message.networkId).setName(message.name);
             return null;
         }
     }

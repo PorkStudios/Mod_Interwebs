@@ -13,14 +13,35 @@
  *
  */
 
-package net.daporkchop.interwebs;
+package net.daporkchop.interwebs.proxy;
 
+import lombok.NonNull;
+import net.daporkchop.interwebs.ModInterwebs;
+import net.daporkchop.interwebs.interweb.Interwebs;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * @author DaPorkchop_
  */
-@Mod.EventBusSubscriber(modid = ModInterwebs.MOD_ID)
-public class EventHandler {
+@Mod.EventBusSubscriber(Side.CLIENT)
+public class ClientProxy extends CommonProxy {
+    @SubscribeEvent
+    public static void onJoin(@NonNull PlayerEvent.PlayerLoggedInEvent event) {
+        logger.debug("Logged in! World: %s, remote: %b\n", event.player.world, event.player.world != null && event.player.world.isRemote);
+        ModInterwebs.INSTANCE.interwebs_clientInstance = new Interwebs(null);
+    }
 
+    @SubscribeEvent
+    public static void onLeave(@NonNull PlayerEvent.PlayerLoggedOutEvent event) {
+        logger.debug("Logged out! World: %s, remote: %b\n", event.player.world, event.player.world != null && event.player.world.isRemote);
+        ModInterwebs.INSTANCE.interwebs_clientInstance = null;
+    }
+
+    @SubscribeEvent
+    public static void registerModels(@NonNull ModelRegistryEvent event) {
+    }
 }
