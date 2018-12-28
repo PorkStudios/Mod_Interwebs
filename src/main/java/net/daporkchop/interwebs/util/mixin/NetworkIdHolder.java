@@ -13,48 +13,17 @@
  *
  */
 
-package net.daporkchop.interwebs.util.inventory;
+package net.daporkchop.interwebs.util.mixin;
 
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import net.daporkchop.interwebs.gui.GuiConstants;
-import net.daporkchop.interwebs.interweb.ItemStorage;
-import net.daporkchop.interwebs.interweb.inventory.StorageSnapshot;
-import net.daporkchop.interwebs.util.stack.BigStack;
+
+import java.util.UUID;
 
 /**
- * Like {@link net.minecraft.inventory.Slot} but big
- *
- * @see net.minecraft.inventory.Slot
  * @author DaPorkchop_
  */
-@AllArgsConstructor
-@Setter
-public class BigSlot implements GuiConstants {
-    public final int x;
-    public final int y;
+public interface NetworkIdHolder {
+    UUID getNetworkId();
 
-    public final int index;
-    @NonNull
-    public final StorageSnapshot snapshot;
-
-    public BigStack getStack()  {
-        return this.snapshot.getStacks()[this.index];
-    }
-
-    public boolean isTouching(int mouseX, int mouseY)  {
-        return mouseX >= this.x && mouseX <= this.x + SLOT_WIDTH && mouseY >= this.y && mouseY <= this.y + SLOT_HEIGHT;
-    }
-
-    @Override
-    public int hashCode() {
-        return this.x * 1717915337 + this.y;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("x:%d,y:%d,index:%d,snapshot:%s", this.x, this.y, this.index, this.snapshot);
-    }
+    void setNetworkId(@NonNull UUID networkId);
 }

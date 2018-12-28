@@ -21,46 +21,73 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
-import net.daporkchop.interwebs.net.PacketHandler;
-import net.daporkchop.interwebs.util.mixin.InterwebTracker;
+import net.daporkchop.interwebs.util.stack.StackIdentifier;
+import net.daporkchop.lib.binary.NettyByteBufUtil;
+import net.daporkchop.lib.binary.stream.DataIn;
+import net.daporkchop.lib.binary.stream.DataOut;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
  */
 @AllArgsConstructor
 @NoArgsConstructor
-public class PacketBeginTrackingInterweb implements IMessage {
+public class PacketFullItemStorageData implements IMessage {
+    @NonNull
+    public Map<StackIdentifier, AtomicLong> values;
     @NonNull
     public UUID networkId;
 
     @Override
     public void fromBytes(@NonNull ByteBuf buf) {
         this.networkId = new UUID(buf.readLong(), buf.readLong());
+
+        this.values = new HashMap<>();
+        try (DataIn in = NettyByteBufUtil.wrapIn(buf)) {
+            for (long l = buf.readLong() - 1L; l >= 0L; l--) {
+                StackIdentifier identifier = StackIdentifier.read(in);
+                long count = in.readLong();
+                if (identifier != null) {
+                    this.values.put(identifier, new AtomicLong(count));
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void toBytes(@NonNull ByteBuf buf) {
         buf.writeLong(this.networkId.getMostSignificantBits());
         buf.writeLong(this.networkId.getLeastSignificantBits());
+
+        buf.writeLong(this.values.size());
+        try (DataOut out = NettyByteBufUtil.wrapOut(buf))   {
+            for (Map.Entry<StackIdentifier, AtomicLong> entry : this.values.entrySet()) {
+                entry.getKey().write(out);
+                out.writeLong(entry.getValue().get());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static class Handler implements IMessageHandler<PacketBeginTrackingInterweb, PacketInterwebData> {
+    public static class Handler implements IMessageHandler<PacketFullItemStorageData, IMessage> {
         @Override
-        public PacketInterwebData onMessage(PacketBeginTrackingInterweb message, MessageContext ctx) {
-            Interweb interweb = Interwebs.getInstance(Side.SERVER).loadAndGet(message.networkId);
-            if (interweb == null) {
-                return null;
-            } else {
-                ((InterwebTracker) ctx.getServerHandler().player).beginTracking(interweb);
-                PacketHandler.INSTANCE.sendTo(new PacketFullItemStorageData(interweb.getInventory().getStacks(), interweb.getUuid()), ctx.getServerHandler().player);
-                return new PacketInterwebData(message.networkId, interweb.getName());
-            }
+        public IMessage onMessage(PacketFullItemStorageData message, MessageContext ctx) {
+            Interweb interweb = Interwebs.getInstance(Side.CLIENT).computeIfAbsent(message.networkId);
+            interweb.getInventory().getStacks().clear();
+            interweb.getInventory().getStacks().putAll(message.values);
+            return null;
         }
     }
 }

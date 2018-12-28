@@ -78,17 +78,4 @@ public class CommonProxy {
 
     public void postInit(@NonNull FMLPostInitializationEvent event) {
     }
-
-    @Mod.EventHandler
-    public void serverStarting(@NonNull FMLServerStartingEvent event)   {
-        logger.debug("Setting server interwebs...");
-        ModInterwebs.INSTANCE.interwebs_serverInstance = new Interwebs(event.getServer().getFile("interwebs"));
-    }
-
-    @Mod.EventHandler
-    public void serverStopping(@NonNull FMLServerStoppingEvent event)   {
-        logger.debug("Clearing server interwebs...");
-        ModInterwebs.INSTANCE.interwebs_serverInstance.unload();
-        ModInterwebs.INSTANCE.interwebs_serverInstance = null;
-    }
 }

@@ -17,9 +17,11 @@ package net.daporkchop.interwebs.tile;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
+import net.daporkchop.interwebs.util.mixin.NetworkIdHolder;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -31,15 +33,13 @@ import java.util.UUID;
  */
 @Accessors(chain = true)
 @Getter
-public class TileEntityTerminal extends TileEntity {
-    @NonNull
+public class TileEntityTerminal extends TileEntity implements NetworkIdHolder {
     private UUID networkId;
-
     private Interweb interweb;
 
     @Override
     public void readFromNBT(NBTTagCompound compound) {
-        this.networkId = compound.getUniqueId("networkId");
+        this.setNetworkId(compound.getUniqueId("networkId"));
         super.readFromNBT(compound);
     }
 
@@ -47,6 +47,19 @@ public class TileEntityTerminal extends TileEntity {
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         compound.setUniqueId("networkId", this.networkId);
         return super.writeToNBT(compound);
+    }
+
+    public Interweb getInterweb()   {
+        if (this.interweb == null)  {
+            this.interweb = Interwebs.getInstance(this.world).getFastOrPossiblyLoad(this.networkId);
+        }
+        return this.interweb;
+    }
+
+    @Override
+    public void setNetworkId(@NonNull UUID networkId) {
+        this.networkId = networkId;
+        this.interweb = null;
     }
 
     public synchronized TileEntityTerminal init(@NonNull EntityPlayer player)    {

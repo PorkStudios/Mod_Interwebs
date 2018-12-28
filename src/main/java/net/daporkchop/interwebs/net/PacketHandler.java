@@ -45,6 +45,8 @@ public class PacketHandler {
         //clientbound
         register(PacketInterwebData.class, PacketInterwebData.Handler.class, Side.CLIENT);
         register(PacketItemData.class, PacketItemData.Handler.class, Side.CLIENT);
+        register(PacketFullItemStorageData.class, PacketFullItemStorageData.Handler.class, Side.CLIENT);
+        register(PacketSetNetworkId.class, PacketSetNetworkId.Handler.class, Side.CLIENT);
     }
 
     private static <P extends IMessage, R extends IMessage> void register(@NonNull Class<P> packetClass, @NonNull Class<? extends IMessageHandler<P, R>> handlerClass, @NonNull Side side) {

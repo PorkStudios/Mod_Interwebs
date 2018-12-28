@@ -15,9 +15,13 @@
 
 package net.daporkchop.interwebs.util;
 
+import com.google.common.base.Equivalence;
+import com.google.common.cache.CacheBuilder;
 import io.netty.buffer.ByteBuf;
 import lombok.NonNull;
 import net.daporkchop.lib.binary.UTF8;
+
+import java.lang.reflect.Field;
 
 import static java.lang.Math.floor;
 
@@ -66,5 +70,17 @@ public class Util {
         byte[] b = new byte[buf.readInt()];
         buf.readBytes(b);
         return b;
+    }
+
+    public static <K, V> CacheBuilder<K, V> setKeyEquivalence(@NonNull CacheBuilder<K, V> builder, @NonNull Equivalence<Object> equivalence) {
+        try {
+            Field field = CacheBuilder.class.getDeclaredField("keyEquivalence");
+            field.setAccessible(true);
+            field.set(builder, equivalence);
+        } catch (IllegalAccessException
+                | NoSuchFieldException e)   {
+            throw new RuntimeException(e);
+        }
+        return builder;
     }
 }

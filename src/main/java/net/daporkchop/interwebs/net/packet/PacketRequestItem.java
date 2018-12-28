@@ -88,6 +88,7 @@ public class PacketRequestItem implements IMessage {
                             ctx.getServerHandler().player.sendContainerToPlayer(ctx.getServerHandler().player.inventoryContainer);
                             PacketHandler.INSTANCE.sendTo(new PacketItemData(count.get(), message.identifier, message.networkId), ctx.getServerHandler().player);
                         });
+                        interweb.markDirty();
                     }
                 }
             }

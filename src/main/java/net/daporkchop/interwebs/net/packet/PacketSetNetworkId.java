@@ -16,17 +16,19 @@
 package net.daporkchop.interwebs.net.packet;
 
 import io.netty.buffer.ByteBuf;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import net.daporkchop.interwebs.interweb.Interweb;
-import net.daporkchop.interwebs.interweb.Interwebs;
-import net.daporkchop.interwebs.net.PacketHandler;
-import net.daporkchop.interwebs.util.mixin.InterwebTracker;
+import net.daporkchop.interwebs.ModInterwebs;
+import net.daporkchop.interwebs.util.mixin.NetworkIdHolder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import org.apache.logging.log4j.Level;
 
 import java.util.UUID;
 
@@ -35,32 +37,38 @@ import java.util.UUID;
  */
 @AllArgsConstructor
 @NoArgsConstructor
-public class PacketBeginTrackingInterweb implements IMessage {
+public class PacketSetNetworkId implements IMessage {
+    public BlockPos pos;
     @NonNull
     public UUID networkId;
 
     @Override
     public void fromBytes(@NonNull ByteBuf buf) {
+        this.pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
+
         this.networkId = new UUID(buf.readLong(), buf.readLong());
     }
 
     @Override
     public void toBytes(@NonNull ByteBuf buf) {
+        buf.writeInt(this.pos.getX());
+        buf.writeInt(this.pos.getY());
+        buf.writeInt(this.pos.getZ());
+
         buf.writeLong(this.networkId.getMostSignificantBits());
         buf.writeLong(this.networkId.getLeastSignificantBits());
     }
 
-    public static class Handler implements IMessageHandler<PacketBeginTrackingInterweb, PacketInterwebData> {
+    public static class Handler implements IMessageHandler<PacketSetNetworkId, IMessage>    {
         @Override
-        public PacketInterwebData onMessage(PacketBeginTrackingInterweb message, MessageContext ctx) {
-            Interweb interweb = Interwebs.getInstance(Side.SERVER).loadAndGet(message.networkId);
-            if (interweb == null) {
-                return null;
+        public IMessage onMessage(PacketSetNetworkId message, MessageContext ctx) {
+            TileEntity te = Minecraft.getMinecraft().world.getTileEntity(message.pos);
+            if (te instanceof NetworkIdHolder)  {
+                ((NetworkIdHolder) te).setNetworkId(message.networkId);
             } else {
-                ((InterwebTracker) ctx.getServerHandler().player).beginTracking(interweb);
-                PacketHandler.INSTANCE.sendTo(new PacketFullItemStorageData(interweb.getInventory().getStacks(), interweb.getUuid()), ctx.getServerHandler().player);
-                return new PacketInterwebData(message.networkId, interweb.getName());
+                ModInterwebs.logger.printf(Level.ERROR, "Invalid tile entity: %s", te == null ? "null" : te.getClass().getCanonicalName());
             }
+            return null;
         }
     }
 }

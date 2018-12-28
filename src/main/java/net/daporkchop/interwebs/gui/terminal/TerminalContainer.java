@@ -17,8 +17,12 @@ package net.daporkchop.interwebs.gui.terminal;
 
 import lombok.Getter;
 import lombok.NonNull;
+import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.net.packet.PacketSetNetworkId;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
@@ -35,6 +39,10 @@ public class TerminalContainer extends Container {
         this.te = te;
 
         this.addPlayerSlots(playerInventory);
+
+        if (!te.getWorld().isRemote)    {
+            PacketHandler.INSTANCE.sendTo(new PacketSetNetworkId(te.getPos(), te.getNetworkId()), (EntityPlayerMP) ((InventoryPlayer) playerInventory).player);
+        }
     }
 
     private void addPlayerSlots(@NonNull IInventory playerInventory) {

@@ -15,6 +15,7 @@
 
 package net.daporkchop.interwebs.interweb;
 
+import com.google.common.base.Equivalence;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -23,11 +24,13 @@ import com.mojang.authlib.GameProfile;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.ModInterwebs;
 import net.daporkchop.interwebs.net.PacketHandler;
 import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
 import net.daporkchop.interwebs.net.packet.PacketStopTrackingInterweb;
+import net.daporkchop.interwebs.util.Util;
 import net.daporkchop.lib.binary.UTF8;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
@@ -47,9 +50,25 @@ import java.util.concurrent.TimeUnit;
 @Getter
 public class Interwebs {
     private static final Interweb BLANK_INTERWEB = new Interweb(UUID.nameUUIDFromBytes("empty".getBytes(UTF8.utf8)));
+    private static Equivalence<Object> KEY_EQUIVALENCE = new Equivalence<Object>() {
+        @Override
+        protected boolean doEquivalent(Object a, Object b) {
+            if (b instanceof Key) {
+                return b.equals(a);
+            } else {
+                return a.equals(b);
+            }
+        }
 
-    private final File root;
+        @Override
+        protected int doHash(Object o) {
+            return o.hashCode();
+        }
+    };
     private final LoadingCache<Key, Interweb> interwebCache;
+    @NonNull
+    @Setter
+    private File root;
 
     public Interwebs() {
         this(null);
@@ -59,7 +78,7 @@ public class Interwebs {
         this.root = root;
         if (root == null) {
             //for the client
-            this.interwebCache = CacheBuilder.newBuilder()
+            this.interwebCache = Util.setKeyEquivalence(CacheBuilder.newBuilder(), KEY_EQUIVALENCE)
                     .concurrencyLevel(Runtime.getRuntime().availableProcessors())
                     .expireAfterAccess(5L, TimeUnit.MINUTES)
                     .removalListener((RemovalListener<Key, Interweb>) notification -> {
@@ -82,15 +101,7 @@ public class Interwebs {
                     });
         } else {
             //server side
-            if (root.exists()) {
-                if (!root.isDirectory()) {
-                    throw new IllegalStateException(String.format("Not a directory: %s", root.getAbsolutePath()));
-                }
-            } else if (!root.mkdirs()) {
-                throw new IllegalStateException(String.format("Couldn't create directory: %s", root.getAbsolutePath()));
-            }
-
-            this.interwebCache = CacheBuilder.newBuilder()
+            this.interwebCache = Util.setKeyEquivalence(CacheBuilder.newBuilder(), KEY_EQUIVALENCE)
                     .concurrencyLevel(Runtime.getRuntime().availableProcessors())
                     .expireAfterAccess(5L, TimeUnit.MINUTES)
                     .removalListener((RemovalListener<Key, Interweb>) notification -> {
@@ -102,10 +113,16 @@ public class Interwebs {
                                     NBTTagCompound tag = new NBTTagCompound();
                                     interweb.write(tag).setDirty(false);
                                     try {
+                                        if (this.root.exists()) {
+                                            if (!this.root.isDirectory()) {
+                                                throw new IllegalStateException(String.format("Not a directory: %s", this.root.getAbsolutePath()));
+                                            }
+                                        } else if (!this.root.mkdirs()) {
+                                            throw new IllegalStateException(String.format("Couldn't create directory: %s", this.root.getAbsolutePath()));
+                                        }
                                         CompressedStreamTools.safeWrite(tag, new File(this.root, String.format("%s.dat", interweb.getUuid())));
                                     } catch (IOException e) {
-                                        e.printStackTrace();
-                                        throw new RuntimeException(e);
+                                        ModInterwebs.logger.error(e);
                                     }
                                 }
                             }
@@ -254,21 +271,6 @@ public class Interwebs {
     public Interweb getFastOrPossiblyLoad(@NonNull UUID uuid) {
         Interweb interweb = this.interwebCache.getIfPresent(uuid);
         return interweb == null ? this.loadAndGet(uuid) : interweb;
-    }
-
-    /**
-     * Unloads this {@link Interwebs} instance, saving all currently loaded interwebs to disk. After this method has been called
-     * nothing else may be done to this instance.
-     *
-     * @return this instance of {@link Interwebs}
-     */
-    public Interwebs unload() {
-        if (this.root == null) {
-            throw new IllegalStateException("cannot save client interwebs!");
-        } else {
-            this.interwebCache.invalidateAll();
-        }
-        return this;
     }
 
     @RequiredArgsConstructor

@@ -66,7 +66,7 @@ public class StorageSnapshot implements GuiConstants {
     }
 
     public synchronized StorageSnapshot update(long current)    {
-        if (this.lastUpdated < current && this.storage.getLastUpdated() > this.lastUpdated)    {
+        if (true || (this.lastUpdated < current && this.storage.getLastUpdated() > this.lastUpdated))    {
             this.lastUpdated = current;
             //TODO: we need to optimize this a LOT
             List<Map.Entry<StackIdentifier, AtomicLong>> list = new ArrayList<>(this.storage.getStacks().entrySet());

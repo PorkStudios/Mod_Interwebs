@@ -49,7 +49,7 @@ public class Interweb {
 
     public Interweb write(@NonNull NBTTagCompound tag)  {
         tag.setUniqueId("uuid", this.uuid);
-        tag.setString("name", this.name);
+        tag.setString("name", this.name == null ? this.uuid.toString() : this.name);
 
         tag.setTag("inventory", this.inventory.write(new NBTTagList()));
         return this;

@@ -21,6 +21,7 @@ import net.daporkchop.interwebs.gui.GuiConstants;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.inventory.StorageSnapshot;
 import net.daporkchop.interwebs.net.PacketHandler;
+import net.daporkchop.interwebs.net.packet.PacketBeginTrackingInterweb;
 import net.daporkchop.interwebs.net.packet.PacketRequestItem;
 import net.daporkchop.interwebs.net.packet.PacketSendItem;
 import net.daporkchop.interwebs.tile.TileEntityTerminal;
@@ -52,6 +53,8 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
         this.xSize = TERMINAL_WIDTH;
         this.ySize = TERMINAL_HEIGHT;
 
+        PacketHandler.INSTANCE.sendToServer(new PacketBeginTrackingInterweb(te.getNetworkId()));
+
         this.interweb = te.getInterweb();
         this.snapshot = new StorageSnapshot(this.interweb.getInventory());
         for (int x = 0; x < TERMINAL_SLOTS_WIDTH; x++)  {
@@ -80,7 +83,23 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
                 .forEach((stack, x, y) -> this.drawStack(stack, this.guiLeft + 8 + x * 18, this.guiTop + 20 + y * 18, null));
         RenderHelper.disableStandardItemLighting();
 
-        this.fontRenderer.drawString(this.interweb.getName(), 8, 6, 0xFF000000);
+        this.fontRenderer.drawString(this.interweb.getName(), 8, 6, 4210752);
+
+        for (int i = TERMINAL_SLOTS_WIDTH * TERMINAL_SLOTS_HEIGHT - 1; i >= 0; i--) {
+            BigSlot slot = this.slots.get(i);
+            if (this.isPointInRegion(slot.x, slot.y, SLOT_WIDTH, SLOT_HEIGHT, mouseX, mouseY))  {
+                GlStateManager.disableLighting();
+                GlStateManager.disableDepth();
+                int j1 = slot.x;
+                int k1 = slot.y;
+                GlStateManager.colorMask(true, true, true, false);
+                this.drawGradientRect(j1, k1, j1 + SLOT_WIDTH, k1 + SLOT_HEIGHT, -2130706433, -2130706433);
+                GlStateManager.colorMask(true, true, true, true);
+                GlStateManager.enableLighting();
+                GlStateManager.enableDepth();
+                break;
+            }
+        }
     }
 
     protected void drawStack(@NonNull BigStack stack, int x, int y, String altText) {
@@ -106,7 +125,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
                         PacketHandler.INSTANCE.sendToServer(new PacketSendItem(-999, inHand.getCount(), this.interweb.getUuid()));
                         this.mc.player.inventory.setItemStack(ItemStack.EMPTY);
                     } else {
-                        BigStack stack = slot.getStack(TERMINAL_SLOTS_HEIGHT);
+                        BigStack stack = slot.getStack();
                         PacketHandler.INSTANCE.sendToServer(new PacketRequestItem(-999, stack.getIdentifier(), this.interweb.getUuid()));
                     }
                     return;

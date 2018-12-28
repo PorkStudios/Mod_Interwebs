@@ -21,7 +21,9 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.daporkchop.interwebs.interweb.Interweb;
 import net.daporkchop.interwebs.interweb.Interwebs;
+import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -69,11 +71,19 @@ public class PacketSendItem implements IMessage {
                 ctx.getServerHandler().disconnect(new TextComponentString(String.format("Received invalid network: %s", message.networkId)));
             } else {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    IInventory inventory = ctx.getServerHandler().player.inventory;
-                    if (inventory.getStackInSlot(message.slot).getCount() < message.count) {
-                        ctx.getServerHandler().disconnect(new TextComponentString("Attempted to send too many items!"));
+                    InventoryPlayer inventory = ctx.getServerHandler().player.inventory;
+                    if (message.slot == -999) {
+                        if (inventory.getItemStack().getCount() < message.count)    {
+                            ctx.getServerHandler().disconnect(new TextComponentString("Attempted to send too many items!"));
+                        }
+                        interweb.getInventory().addItem(inventory.getItemStack().splitStack(message.count));
+                    } else {
+                        if (inventory.getStackInSlot(message.slot).getCount() < message.count) {
+                            ctx.getServerHandler().disconnect(new TextComponentString("Attempted to send too many items!"));
+                        }
+                        interweb.getInventory().addItem(inventory.decrStackSize(message.slot, message.count));
                     }
-                    interweb.getInventory().addItem(inventory.decrStackSize(message.slot, message.count));
+                    interweb.markDirty();
                 });
             }
             return null;

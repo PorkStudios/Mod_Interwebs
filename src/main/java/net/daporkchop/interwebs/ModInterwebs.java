@@ -27,9 +27,11 @@ import net.daporkchop.interwebs.proxy.CommonProxy;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
@@ -39,6 +41,7 @@ import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -59,8 +62,8 @@ public class ModInterwebs {
     public static final String MOD_NAME = "The Interwebs";
     public static final String VERSION = "0.0.1";
 
-    public Interwebs interwebs_serverInstance;
-    public Interwebs interwebs_clientInstance;
+    public final Interwebs interwebs_serverInstance = new Interwebs(new File("."));
+    public final Interwebs interwebs_clientInstance = new Interwebs(null);
 
     @Mod.Instance(MOD_ID)
     public static ModInterwebs INSTANCE;
@@ -93,4 +96,29 @@ public class ModInterwebs {
         proxy.postInit(event);
     }
 
+    @Mod.EventHandler
+    public void serverStarted(@NonNull FMLServerStartedEvent event)   {
+        if (event.getSide() == Side.CLIENT)  {
+            logger.debug("Setting integrated server interwebs...");
+        } else {
+            logger.debug("Setting dedicated server interwebs...");
+        }
+        this.interwebs_serverInstance.getInterwebCache().invalidateAll();
+        this.interwebs_serverInstance.setRoot(new File(FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0).getPerWorldStorage().saveHandler.getWorldDirectory(), "interwebs"));
+    }
+
+    @Mod.EventHandler
+    public void serverStopping(@NonNull FMLServerStoppedEvent event)   {
+        if (event.getSide() == Side.CLIENT)  {
+            logger.debug("Clearing integrated server interwebs...");
+        } else {
+            logger.debug("Clearing dedicated server interwebs...");
+        }
+        this.interwebs_serverInstance.getInterwebCache().invalidateAll();
+    }
+
+    public void unloadInterwebs()   {
+        this.interwebs_clientInstance.getInterwebCache().invalidateAll();
+        this.interwebs_serverInstance.getInterwebCache().invalidateAll();
+    }
 }

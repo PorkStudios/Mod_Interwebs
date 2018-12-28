@@ -21,6 +21,7 @@ import net.daporkchop.interwebs.block.InterwebsBlocks;
 import net.daporkchop.interwebs.interweb.Interwebs;
 import net.daporkchop.interwebs.item.InterwebsItems;
 import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
@@ -32,15 +33,19 @@ import net.minecraftforge.fml.relauncher.Side;
 @Mod.EventBusSubscriber(Side.CLIENT)
 public class ClientProxy extends CommonProxy {
     @SubscribeEvent
-    public static void onJoin(@NonNull PlayerEvent.PlayerLoggedInEvent event) {
-        logger.debug(String.format("Logged in! World: %s, remote: %b", event.player.world, event.player.world != null && event.player.world.isRemote));
-        ModInterwebs.INSTANCE.interwebs_clientInstance = new Interwebs(null);
+    public static void onLoad(@NonNull WorldEvent.Load event) {
+        logger.debug(String.format("World loaded! World: %s, remote: %b", event.getWorld(), event.getWorld() != null && event.getWorld().isRemote));
+        if (event.getWorld().isRemote)  {
+            ModInterwebs.INSTANCE.interwebs_clientInstance.getInterwebCache().invalidateAll();
+        }
     }
 
     @SubscribeEvent
-    public static void onLeave(@NonNull PlayerEvent.PlayerLoggedOutEvent event) {
-        logger.debug("Logged out! World: %s, remote: %b\n", event.player.world, event.player.world != null && event.player.world.isRemote);
-        ModInterwebs.INSTANCE.interwebs_clientInstance = null;
+    public static void onUnload(@NonNull WorldEvent.Unload event) {
+        logger.debug(String.format("World unloaded! World: %s, remote: %b", event.getWorld(), event.getWorld() != null && event.getWorld().isRemote));
+        if (event.getWorld().isRemote)  {
+            ModInterwebs.INSTANCE.interwebs_clientInstance.getInterwebCache().invalidateAll();
+        }
     }
 
     @SubscribeEvent
