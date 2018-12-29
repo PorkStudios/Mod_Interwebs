@@ -21,14 +21,10 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.daporkchop.interwebs.gui.GuiConstants;
 import net.daporkchop.interwebs.interweb.ItemStorage;
-import net.daporkchop.interwebs.util.CoolAtomicLong;
 import net.daporkchop.interwebs.util.stack.BigStack;
-import net.daporkchop.interwebs.util.stack.StackIdentifier;
-import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Allows taking snapshots of a storage at a certain point in time
@@ -47,13 +43,14 @@ public class StorageSnapshot implements GuiConstants {
     @Setter
     private int scrollPos;
 
-    private long lastUpdated;
+    public long updateQueued;
+    public long lastUpdated;
 
-    public StorageSnapshot(@NonNull ItemStorage storage)    {
+    public StorageSnapshot(@NonNull ItemStorage storage) {
         this(TERMINAL_SLOTS_WIDTH, TERMINAL_SLOTS_HEIGHT, storage);
     }
 
-    public StorageSnapshot(int width, int height, @NonNull ItemStorage storage)   {
+    public StorageSnapshot(int width, int height, @NonNull ItemStorage storage) {
         this.width = width;
         this.height = height;
         this.storage = storage;
@@ -61,34 +58,34 @@ public class StorageSnapshot implements GuiConstants {
         this.stacks = new BigStack[width * height];
     }
 
-    public StorageSnapshot update()    {
-        return this.update(System.currentTimeMillis());
-    }
-
-    public synchronized StorageSnapshot update(long current)    {
-        if (true || (this.lastUpdated < current/* && this.storage.getLastUpdated() > this.lastUpdated)*/))    {
-            this.lastUpdated = current;
+    public synchronized StorageSnapshot update(long time) {
+        if (this.lastUpdated < this.updateQueued && time >= this.updateQueued)  {
+            this.lastUpdated = time;
             //TODO: we need to optimize this a LOT
-            List<Map.Entry<StackIdentifier, BigStack>> list = new ArrayList<>(this.storage.getStacks().entrySet());
+            List<BigStack> list = new ArrayList<>(this.storage.getStacks().values());
+            list.sort((a, b) -> Long.compare(b.getCount().get(), a.getCount().get()));
+            list.removeIf(BigStack::isEmpty);
             int off = this.scrollPos * this.width;
-            for (int i = 0; i < this.width * this.height; i++)   {
-                int pos = i + off;
-                if (pos >= list.size()) {
-                    this.stacks[i] = null;
-                } else {
-                    this.stacks[i] = list.get(pos).getValue();
+            for (int x = this.width - 1; x >= 0; x--) {
+                for (int y = this.height - 1; y >= 0; y--) {
+                    int i = x + y * this.width;
+                    int pos = i + off;
+                    if (pos >= list.size()) {
+                        this.stacks[i] = null;
+                    } else {
+                        this.stacks[i] = list.get(pos);
+                    }
                 }
             }
         }
         return this;
     }
 
-    public StorageSnapshot forEach(@NonNull StackConsumer consumer)   {
-        int off = this.scrollPos * this.width;
-        for (int x = this.width - 1; x >= 0; x--)   {
-            for (int y = this.height - 1; y >= 0; y--)  {
-                BigStack stack = this.stacks[x * this.height + y + off];
-                if (stack != null)  {
+    public StorageSnapshot forEach(@NonNull StackConsumer consumer) {
+        for (int x = this.width - 1; x >= 0; x--) {
+            for (int y = this.height - 1; y >= 0; y--) {
+                BigStack stack = this.stacks[x + y * this.width];
+                if (stack != null) {
                     consumer.accept(stack, x, y);
                 }
             }
@@ -97,7 +94,7 @@ public class StorageSnapshot implements GuiConstants {
     }
 
     @FunctionalInterface
-    public interface StackConsumer  {
+    public interface StackConsumer {
         void accept(@NonNull BigStack stack, int x, int y);
     }
 }

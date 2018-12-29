@@ -103,6 +103,10 @@ public class BigStack implements PrimitiveConstants {
         return this.identifier.getNbt();
     }
 
+    public boolean isEmpty()    {
+        return this.count.get() <= 0L;
+    }
+
     @Override
     public int hashCode() {
         return (int) (this.identifier.hashCode() * 2813494353178762259L + this.hash(this.count.get()));

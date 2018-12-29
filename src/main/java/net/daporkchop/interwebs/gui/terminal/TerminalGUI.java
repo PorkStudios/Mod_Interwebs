@@ -64,7 +64,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
                 this.slots.add(new BigSlot(
                         8 + x * 18,
                         20 + y * 18,
-                        x * TERMINAL_SLOTS_HEIGHT + y,
+                        x + y * TERMINAL_SLOTS_WIDTH,
                         this.snapshot
                 ));
             }
@@ -81,8 +81,7 @@ public class TerminalGUI extends GuiContainer implements GuiConstants {
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
         RenderHelper.enableGUIStandardItemLighting();
         //hehe this actually draws the items
-        this.snapshot.update(System.currentTimeMillis() >>> 9L)
-                .forEach((stack, x, y) -> this.drawStack(stack, 0 * this.guiLeft + 8 + x * 18, 0 * this.guiTop + 20 + y * 18, null));
+        this.snapshot.update(this.mc.world.getTotalWorldTime()).forEach((stack, x, y) -> this.drawStack(stack, 0 * this.guiLeft + 8 + x * 18, 0 * this.guiTop + 20 + y * 18, null));
         RenderHelper.disableStandardItemLighting();
 
         this.fontRenderer.drawString(this.interweb.getName(), 8, 6, 4210752);
